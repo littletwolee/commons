@@ -44,9 +44,7 @@ func (e *logger) LogErr(err error) {
 // @Title LogInfo
 // @Description log info
 // @Parameters
-//            err            error          error
-func (e *logger) LogInfo(err error) {
-	if err != nil {
-		logrus.Info(err)
-	}
+//            msg            string          msg
+func (e *logger) LogInfo(msg string) {
+	logrus.Info(msg)
 }
