@@ -15,8 +15,8 @@ type logger struct{}
 func init() {
 	ConsLogger = &logger{}
 	log = logrus.New()
-	logpath := ConsConfig.getValue("logs", "path")
-	loglevel := ConsConfig.getValue("logs", "loglevel")
+	logpath := ConsConfig.GetValue("logs", "path")
+	loglevel := ConsConfig.GetValue("logs", "loglevel")
 	log.Formatter = new(logrus.TextFormatter)
 	file, err := os.OpenFile(logpath, os.O_CREATE|os.O_WRONLY, 0666)
 	if err == nil {
