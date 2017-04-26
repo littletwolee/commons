@@ -2,8 +2,10 @@ package commons
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"strings"
 )
 
@@ -31,7 +33,7 @@ func (f *File) PathExists(path string, iscreate bool) error {
 		err error
 	)
 	if path == "" {
-		err = errors.New(PathEmpty)
+		err = errors.New(ErrorPathEmpty)
 		goto RETURN
 	}
 	_, err = os.Stat(path)
@@ -64,6 +66,7 @@ func (f *File) GetFilesInfo(path string) ([]os.FileInfo, error) {
 		dirList []os.FileInfo
 	)
 	if path == "" {
+		err = errors.New(ErrorPathEmpty)
 		goto RETURN
 	}
 	dirList, err = ioutil.ReadDir(path)
@@ -79,31 +82,44 @@ RETURN:
 // @Description get file full name from path
 // @Parameters
 //            path           string       path
-// @Returns file name:string
-func (f *File) GetFileFullNameByPath(path string) string {
+// @Returns file name:string err:error
+func (f *File) GetFileFullNameByPath(path string) (string, error) {
 	var (
 		index int
+		err   error
 	)
+	if path == "" {
+		err = errors.New(ErrorPathEmpty)
+		goto RETURN
+	}
 	if strings.Contains(path, "/") {
 		index = strings.LastIndexAny(path, "/")
 		path = path[index+1 : len(path)]
 	}
 	goto RETURN
 RETURN:
-	return path
+	return path, err
 }
 
 // @Title GetFileExtension
 // @Description get file extension from path
 // @Parameters
 //            path            string        file path
-// @Returns file extension:string
-func (f *File) GetFileExtension(path string) string {
+// @Returns file extension:string err:error
+func (f *File) GetFileExtension(path string) (string, error) {
 	var (
 		index int
+		err   error
 	)
+	if path == "" {
+		err = errors.New(ErrorPathEmpty)
+		goto RETURN
+	}
 	if strings.Contains(path, "/") {
-		path = f.GetFileFullNameByPath(path)
+		path, err = f.GetFileFullNameByPath(path)
+		if err != nil {
+			goto RETURN
+		}
 	}
 	if strings.Contains(path, ".") {
 		index = strings.LastIndex(path, ".")
@@ -112,20 +128,28 @@ func (f *File) GetFileExtension(path string) string {
 	path = ""
 	goto RETURN
 RETURN:
-	return path
+	return path, err
 }
 
 // @Title GetFileNameByPath
 // @Description get file name from path
 // @Parameters
 //            filename      string                    file name
-// @Returns file name:string
-func (f *File) GetFileNameByPath(path string) string {
+// @Returns file name:string err:error
+func (f *File) GetFileNameByPath(path string) (string, error) {
 	var (
 		index int
+		err   error
 	)
+	if path == "" {
+		err = errors.New(ErrorPathEmpty)
+		goto RETURN
+	}
 	if strings.Contains(path, "/") {
-		path = f.GetFileFullNameByPath(path)
+		path, err = f.GetFileFullNameByPath(path)
+		if err != nil {
+			goto RETURN
+		}
 	}
 	if strings.Contains(path, ".") {
 		index = strings.LastIndex(path, ".")
@@ -133,7 +157,7 @@ func (f *File) GetFileNameByPath(path string) string {
 	}
 	goto RETURN
 RETURN:
-	return path
+	return path, err
 }
 
 // @Title PathDel
@@ -145,8 +169,95 @@ func (f *File) PathDel(path string) error {
 	var (
 		err error
 	)
+	if path == "" {
+		err = errors.New(ErrorPathEmpty)
+		goto RETURN
+	}
 	err = os.RemoveAll(path)
 	goto RETURN
 RETURN:
 	return err
 }
+
+// @Title OpenFile
+// @Description open file in io.Writer
+// @Parameters
+//            path              string       path
+// @Returns writer:*os.File err:error
+func (f *File) OpenFile(path string) (*os.File, error) {
+	var (
+		err  error
+		file *os.File
+	)
+	if path == "" {
+		err = errors.New(ErrorPathEmpty)
+		goto RETURN
+	}
+	file, err = os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0666)
+	goto RETURN
+RETURN:
+	return file, err
+}
+
+// @Title FormatPath
+// @Description format path from xx/xx to xx/xx/
+// @Parameters
+//            path              string       path
+// @Returns path:string err:error
+func (f *File) FormatPath(path string) (string, error) {
+	var (
+		err         error
+		currentPath string
+	)
+	if path == "" {
+		err = errors.New(ErrorPathEmpty)
+		goto RETURN
+	}
+	if path[len(path)-1:] != "/" {
+		path = fmt.Sprintf("%s%s", path, "/")
+	}
+	currentPath, err = f.GetCurrentDirectory()
+	if err != nil {
+		goto RETURN
+	}
+	path = fmt.Sprintf("%s%s", currentPath, path)
+	goto RETURN
+RETURN:
+	return path, err
+}
+
+// @Title FormatPath
+// @Description format path from xx/xx to xx/xx/
+// @Returns path:string err:error
+func (f *File) GetCurrentDirectory() (string, error) {
+	var (
+		err         error
+		currentPath string
+		index       int
+	)
+	currentPath, err = exec.LookPath(os.Args[0])
+	if err != nil {
+		goto RETURN
+	}
+	index = strings.LastIndex(currentPath, "\\")
+	currentPath = string(currentPath[0 : index+1])
+	goto RETURN
+RETURN:
+	return currentPath, err
+}
+
+// func (f *File) WriteFile(path, txt string) error {
+// 	var (
+// 		err error
+// 	)
+// 	err = f.PathExists(path, false)
+// 	if err != nil {
+// 		err = ioutil.WriteFile("./output2.txt", []byte(txt), 0666)
+// 		if err != nil {
+// 			goto RETURN
+// 		}
+// 	}
+// 	goto RETURN
+// RETURN:
+// 	return err
+// }

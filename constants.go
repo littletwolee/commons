@@ -5,7 +5,8 @@ import (
 )
 
 const (
-	PathEmpty = "Your path is empty?"
+	ErrorPathEmpty = "Your path is empty?"
+	ErrorParse     = "Failed parse log level"
 )
 
 const (
