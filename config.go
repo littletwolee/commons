@@ -21,13 +21,13 @@ func init() {
 	readList()
 }
 
-// @Title getValue
+// @Title GetValue
 // @Description get value from config by section & name
 // @Parameters
 //            section            string          group name
 //            name               string          node name
 // @Returns err:error
-func (c *config) getValue(section, name string) string {
+func (c *config) GetValue(section, name string) string {
 	// if conflist == nil{
 	// 	c.ReadList()
 	// }
