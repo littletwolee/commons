@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"os"
+	"runtime"
 	"sync"
 )
 
@@ -13,8 +14,9 @@ var (
 )
 
 type log struct {
-	ErrLog *logger
-	MsgLog *logger
+	ErrLog   *logger
+	MsgLog   *logger
+	PanicLog *logger
 }
 
 type logger struct {
@@ -36,6 +38,7 @@ func init() {
 	}
 	ConsLogger.ErrLog = getNew("error", logPath)
 	ConsLogger.MsgLog = getNew("info", logPath)
+	ConsLogger.PanicLog = getNew("panic", logPath)
 }
 
 // @Title getNew
@@ -101,4 +104,26 @@ func (l *log) LogMsg(msg string) {
 	defer file.Close()
 	l.MsgLog.Log.Out = file
 	l.MsgLog.Log.Info(msg)
+}
+
+// @Title LogPanic
+// @Description log panic
+// @Parameters
+//            msg            string          msg
+func (l *log) LogPanic(errin error) {
+	l.PanicLog.RWMutex.Lock()
+	defer l.PanicLog.RWMutex.Unlock()
+	file, err := ConsFile.OpenFile(l.PanicLog.Path, os.O_CREATE|os.O_APPEND|os.O_WRONLY)
+	if err != nil {
+		logrus.Error(err)
+	}
+	defer file.Close()
+	l.PanicLog.Log.Out = file
+	pc, _, line, _ := runtime.Caller(1)
+	funcName := runtime.FuncForPC(pc).Name()
+	l.PanicLog.Log.WithFields(logrus.Fields{
+		"func": funcName[:len(funcName)-2],
+		"line": line,
+	}).Panic(errin)
+
 }
