@@ -182,9 +182,10 @@ RETURN:
 // @Title OpenFile
 // @Description open file in io.Writer
 // @Parameters
-//            path              string       path
+//            path            string           path
+//            flags           int              flags
 // @Returns writer:*os.File err:error
-func (f *File) OpenFile(path string) (*os.File, error) {
+func (f *File) OpenFile(path string, flags int) (*os.File, error) {
 	var (
 		err  error
 		file *os.File
@@ -193,7 +194,7 @@ func (f *File) OpenFile(path string) (*os.File, error) {
 		err = errors.New(ErrorPathEmpty)
 		goto RETURN
 	}
-	file, err = os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0666)
+	file, err = os.OpenFile(path, flags, 0666)
 	goto RETURN
 RETURN:
 	return file, err
