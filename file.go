@@ -10,14 +10,14 @@ import (
 )
 
 var (
-	ConsFile     *File
+	ConsFile     *file
 	fileCacheDir string
 )
 
-type File struct{}
+type file struct{}
 
 func init() {
-	ConsFile = &File{}
+	ConsFile = &file{}
 	// fileCacheDir = ConsConfigHelper.GetValue("filecache", "path")
 	// ConsFileHelper.PathExists("", true)
 }
@@ -28,7 +28,7 @@ func init() {
 //            path              string          file/directory path
 //            iscreate          bool            need to create directory?
 // @Returns err:error
-func (f *File) PathExists(path string, iscreate bool) error {
+func (f *file) PathExists(path string, iscreate bool) error {
 	var (
 		err error
 	)
@@ -60,7 +60,7 @@ RETURN:
 // @Parameters
 //            path              string       path
 // @Returns list:[]os.FileInfo err:error
-func (f *File) GetFilesInfo(path string) ([]os.FileInfo, error) {
+func (f *file) GetFilesInfo(path string) ([]os.FileInfo, error) {
 	var (
 		err     error
 		dirList []os.FileInfo
@@ -83,7 +83,7 @@ RETURN:
 // @Parameters
 //            path           string       path
 // @Returns file name:string err:error
-func (f *File) GetFileFullNameByPath(path string) (string, error) {
+func (f *file) GetFileFullNameByPath(path string) (string, error) {
 	var (
 		index int
 		err   error
@@ -106,7 +106,7 @@ RETURN:
 // @Parameters
 //            path            string        file path
 // @Returns file extension:string err:error
-func (f *File) GetFileExtension(path string) (string, error) {
+func (f *file) GetFileExtension(path string) (string, error) {
 	var (
 		index int
 		err   error
@@ -136,7 +136,7 @@ RETURN:
 // @Parameters
 //            filename      string                    file name
 // @Returns file name:string err:error
-func (f *File) GetFileNameByPath(path string) (string, error) {
+func (f *file) GetFileNameByPath(path string) (string, error) {
 	var (
 		index int
 		err   error
@@ -165,7 +165,7 @@ RETURN:
 // @Parameters
 //            path              string       path
 // @Returns err:error
-func (f *File) PathDel(path string) error {
+func (f *file) PathDel(path string) error {
 	var (
 		err error
 	)
@@ -185,7 +185,7 @@ RETURN:
 //            path            string           path
 //            flags           int              flags
 // @Returns writer:*os.File err:error
-func (f *File) OpenFile(path string, flags int) (*os.File, error) {
+func (f *file) OpenFile(path string, flags int) (*os.File, error) {
 	var (
 		err  error
 		file *os.File
@@ -205,7 +205,7 @@ RETURN:
 // @Parameters
 //            path              string       path
 // @Returns path:string err:error
-func (f *File) FormatPath(path string) (string, error) {
+func (f *file) FormatPath(path string) (string, error) {
 	var (
 		err         error
 		currentPath string
@@ -230,7 +230,7 @@ RETURN:
 // @Title FormatPath
 // @Description format path from xx/xx to xx/xx/
 // @Returns path:string err:error
-func (f *File) GetCurrentDirectory() (string, error) {
+func (f *file) GetCurrentDirectory() (string, error) {
 	var (
 		err         error
 		currentPath string
@@ -246,19 +246,3 @@ func (f *File) GetCurrentDirectory() (string, error) {
 RETURN:
 	return currentPath, err
 }
-
-// func (f *File) WriteFile(path, txt string) error {
-// 	var (
-// 		err error
-// 	)
-// 	err = f.PathExists(path, false)
-// 	if err != nil {
-// 		err = ioutil.WriteFile("./output2.txt", []byte(txt), 0666)
-// 		if err != nil {
-// 			goto RETURN
-// 		}
-// 	}
-// 	goto RETURN
-// RETURN:
-// 	return err
-// }
