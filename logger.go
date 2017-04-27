@@ -3,8 +3,8 @@ package commons
 import (
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"os"
 	"sync"
-	"time"
 )
 
 var (
@@ -26,7 +26,6 @@ type logger struct {
 func init() {
 	ConsLogger = &log{}
 	logPath := ConsConfig.GetValue("logs", "path")
-	logLevel := ConsConfig.GetValue("logs", "loglevel")
 	logPath, err := ConsFile.FormatPath(logPath)
 	if err != nil {
 		logrus.Error(err)
@@ -35,17 +34,17 @@ func init() {
 	if err != nil {
 		logrus.Error(err)
 	}
-	ConsLogger.ErrLog = getNew("err.log", logLevel, logPath)
-	ConsLogger.MsgLog = getNew("msg.log", logLevel, logPath)
+	ConsLogger.ErrLog = getNew("error", logPath)
+	ConsLogger.MsgLog = getNew("info", logPath)
 }
 
 // @Title getNew
 // @Description get new logger point
 // @Parameters
-//            logname          string           log name
 //            loglevel         string           log level
+//            logPath          string           log path
 // @Returns logger point:*logrus.Logger
-func getNew(logName, logLevel, logPath string) *logger {
+func getNew(logLevel, logPath string) *logger {
 	var (
 		log *logger
 		err error
@@ -56,8 +55,8 @@ func getNew(logName, logLevel, logPath string) *logger {
 	}
 	log = &logger{
 		RWMutex: new(sync.RWMutex),
-		Log:     &logrus.Logger{},
-		Path:    fmt.Sprintf("%s%s", logPath, logName),
+		Log:     logrus.New(),
+		Path:    fmt.Sprintf("%s%s.log", logPath, logLevel),
 	}
 	log.Log.Formatter = new(logrus.TextFormatter)
 	level, err := logrus.ParseLevel(logLevel)
@@ -78,15 +77,13 @@ func (l *log) LogErr(errin error) {
 	if errin != nil {
 		l.ErrLog.RWMutex.Lock()
 		defer l.ErrLog.RWMutex.Unlock()
-		file, err := ConsFile.OpenFile(l.ErrLog.Path)
+		file, err := ConsFile.OpenFile(l.ErrLog.Path, os.O_CREATE|os.O_APPEND|os.O_WRONLY)
 		if err != nil {
 			logrus.Error(err)
 		}
+		defer file.Close()
 		l.ErrLog.Log.Out = file
-		l.ErrLog.Log.WithFields(logrus.Fields{
-			"Time":  time.Now(),
-			"Level": l.ErrLog.Log.Level,
-		}).Error(err)
+		l.ErrLog.Log.Error(errin)
 	}
 }
 
@@ -95,17 +92,13 @@ func (l *log) LogErr(errin error) {
 // @Parameters
 //            msg            string          msg
 func (l *log) LogMsg(msg string) {
-	fmt.Println(msg)
-	// l.MsgLog.RWMutex.Lock()
-	// defer l.MsgLog.RWMutex.Unlock()
-	file, err := ConsFile.OpenFile(l.MsgLog.Path)
+	l.MsgLog.RWMutex.Lock()
+	defer l.MsgLog.RWMutex.Unlock()
+	file, err := ConsFile.OpenFile(l.MsgLog.Path, os.O_CREATE|os.O_APPEND|os.O_WRONLY)
 	if err != nil {
 		logrus.Error(err)
 	}
-	fmt.Println(file)
+	defer file.Close()
 	l.MsgLog.Log.Out = file
-	l.MsgLog.Log.WithFields(logrus.Fields{
-		"Time":  time.Now(),
-		"Level": l.MsgLog.Log.Level,
-	}).Info(msg)
+	l.MsgLog.Log.Info(msg)
 }
