@@ -10,4 +10,7 @@ A little toolkit. Can help you quickly handle file/http/log/config problems.
 
 ##Usage
 
-
+```shell
+go get github.com/littletwolee/commons
+go install github.com/littletwolee/commons
+```
