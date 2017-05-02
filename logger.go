@@ -9,11 +9,11 @@ import (
 )
 
 var (
-	ConsLogger *log
 	m          *sync.RWMutex
+	consLogger *Log
 )
 
-type log struct {
+type Log struct {
 	ErrLog   *logger
 	MsgLog   *logger
 	PanicLog *logger
@@ -25,20 +25,23 @@ type logger struct {
 	Path    string
 }
 
-func init() {
-	ConsLogger = &log{}
+func GetLogger() *Log {
+	if consLogger == nil {
+		consLogger = &Log{}
+	}
 	logPath := ConsConfig.GetValue("logs", "path")
-	logPath, err := ConsFile.FormatPath(logPath)
+	logPath, err := consFile.FormatPath(logPath)
 	if err != nil {
-		logrus.Error(err)
+		logrus.Panic(err)
 	}
-	err = ConsFile.PathExists(logPath, true)
+	err = consFile.PathExists(logPath, true)
 	if err != nil {
-		logrus.Error(err)
+		logrus.Panic(err)
 	}
-	ConsLogger.ErrLog = getNew("error", logPath)
-	ConsLogger.MsgLog = getNew("info", logPath)
-	ConsLogger.PanicLog = getNew("panic", logPath)
+	consLogger.ErrLog = consLogger.getNew("error", logPath)
+	consLogger.MsgLog = consLogger.getNew("info", logPath)
+	consLogger.PanicLog = consLogger.getNew("panic", logPath)
+	return consLogger
 }
 
 // @Title getNew
@@ -47,12 +50,14 @@ func init() {
 //            loglevel         string           log level
 //            logPath          string           log path
 // @Returns logger point:*logrus.Logger
-func getNew(logLevel, logPath string) *logger {
+func (l *Log) getNew(logLevel, logPath string) *logger {
 	var (
-		log *logger
-		err error
+		log      *logger
+		err      error
+		consFile *file
 	)
-	logPath, err = ConsFile.FormatPath(logPath)
+	consFile = GetFile()
+	logPath, err = consFile.FormatPath(logPath)
 	if err != nil {
 		logrus.Error(err)
 	}
@@ -76,11 +81,11 @@ RETURN:
 // @Description check error
 // @Parameters
 //             errin            error          error
-func (l *log) LogErr(errin error) {
+func (l *Log) LogErr(errin error) {
 	if errin != nil {
 		l.ErrLog.RWMutex.Lock()
 		defer l.ErrLog.RWMutex.Unlock()
-		file, err := ConsFile.OpenFile(l.ErrLog.Path, os.O_CREATE|os.O_APPEND|os.O_WRONLY)
+		file, err := consFile.OpenFile(l.ErrLog.Path, os.O_CREATE|os.O_APPEND|os.O_WRONLY)
 		if err != nil {
 			logrus.Error(err)
 		}
@@ -94,10 +99,10 @@ func (l *log) LogErr(errin error) {
 // @Description log msg
 // @Parameters
 //            msg            string          msg
-func (l *log) LogMsg(msg string) {
+func (l *Log) LogMsg(msg string) {
 	l.MsgLog.RWMutex.Lock()
 	defer l.MsgLog.RWMutex.Unlock()
-	file, err := ConsFile.OpenFile(l.MsgLog.Path, os.O_CREATE|os.O_APPEND|os.O_WRONLY)
+	file, err := consFile.OpenFile(l.MsgLog.Path, os.O_CREATE|os.O_APPEND|os.O_WRONLY)
 	if err != nil {
 		logrus.Error(err)
 	}
@@ -110,10 +115,10 @@ func (l *log) LogMsg(msg string) {
 // @Description log panic
 // @Parameters
 //            msg            string          msg
-func (l *log) LogPanic(errin error) {
+func (l *Log) LogPanic(errin error) {
 	l.PanicLog.RWMutex.Lock()
 	defer l.PanicLog.RWMutex.Unlock()
-	file, err := ConsFile.OpenFile(l.PanicLog.Path, os.O_CREATE|os.O_APPEND|os.O_WRONLY)
+	file, err := consFile.OpenFile(l.PanicLog.Path, os.O_CREATE|os.O_APPEND|os.O_WRONLY)
 	if err != nil {
 		logrus.Error(err)
 	}

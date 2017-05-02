@@ -10,14 +10,17 @@ import (
 )
 
 var (
-	ConsFile     *file
+	consFile     *file
 	fileCacheDir string
 )
 
 type file struct{}
 
-func init() {
-	ConsFile = &file{}
+func GetFile() *file {
+	if consFile == nil {
+		consFile = &file{}
+	}
+	return consFile
 	// fileCacheDir = ConsConfigHelper.GetValue("filecache", "path")
 	// ConsFileHelper.PathExists("", true)
 }
@@ -245,4 +248,20 @@ func (f *file) GetCurrentDirectory() (string, error) {
 	goto RETURN
 RETURN:
 	return currentPath, err
+}
+
+// @Title ReadFile
+// @Description read file from path
+// @Parameters
+//            path              string       path
+// @Returns data:[]byte err:error
+func (f *file) ReadFile(path string) ([]byte, error) {
+	var (
+		data []byte
+		err  error
+	)
+	data, err = ioutil.ReadFile(path)
+	goto RETURN
+RETURN:
+	return data, err
 }

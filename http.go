@@ -9,13 +9,16 @@ import (
 )
 
 var (
-	ConsHttp *_http
+	consHttp *Http
 )
 
-type _http struct{}
+type Http struct{}
 
-func init() {
-	ConsHttp = &_http{}
+func GetHttp() *Http {
+	if consHttp == nil {
+		consHttp = &Http{}
+	}
+	return consHttp
 }
 
 // @Title HttpMethod
@@ -26,7 +29,7 @@ func init() {
 //            url             string                          http url
 //            headers         map[string]string               http headers
 // @Returns statuscode:int json:[]byte err:error
-func (h *_http) HttpMethod(data io.Reader, method, url string, headers map[string]string) (int, []byte, error) {
+func (h *Http) HttpMethod(data io.Reader, method, url string, headers map[string]string) (int, []byte, error) {
 	request, err := http.NewRequest(method, url, data)
 	code := -1
 	if err != nil {
@@ -55,7 +58,7 @@ func (h *_http) HttpMethod(data io.Reader, method, url string, headers map[strin
 // @Parameters
 //            data            map[string]interface{}          post json data
 // @Returns reader:*bytes.Reader err:error
-func (h *_http) JsonData(data map[string]interface{}) (*bytes.Reader, error) {
+func (h *Http) JsonData(data map[string]interface{}) (*bytes.Reader, error) {
 	var reader *bytes.Reader
 	if data != nil && len(data) > 0 {
 		bytesData, err := json.Marshal(data)

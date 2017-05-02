@@ -46,8 +46,9 @@ func (c *config) GetValue(section, name string) string {
 // @Returns config list:[]map[string]map[string]string
 func readList() {
 	file, err := os.Open(filePath)
+	consLogger := GetLogger()
 	if err != nil {
-		ConsLogger.LogErr(err)
+		consLogger.LogErr(err)
 	}
 	defer file.Close()
 	var data map[string]map[string]string
@@ -58,7 +59,7 @@ func readList() {
 		line := strings.TrimSpace(l)
 		if err != nil {
 			if err != io.EOF {
-				ConsLogger.LogErr(err)
+				consLogger.LogErr(err)
 			}
 			if len(line) == 0 {
 				break
