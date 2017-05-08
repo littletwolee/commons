@@ -3,7 +3,6 @@ package commons
 import (
 	"bytes"
 	"fmt"
-	"os"
 	"os/exec"
 )
 
