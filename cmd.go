@@ -23,10 +23,14 @@ func GetCmd() *Cmd {
 // @Title ExecCommand
 // @Description exec command
 // @Parameters
-//                  cmd             *exec.Cmd        cmd point
-//                  isStdout        bool             need os out put
+//                  command                *exec.Cmd        cmd point
+//                  paras                  []string         parparameters
+//                  cmddir                 string           dir of exec
+//                  isStdout               bool             need os out put
 // @Returns output:string err:error
-func (c *Cmd) ExecCommand(cmd *exec.Cmd, isStdout bool) (string, error) {
+func (c *Cmd) ExecCommand(command string, pars []string, cmddir string, isStdout bool) (string, error) {
+	cmd := exec.Command(command, pars...)
+	cmd.Dir = cmddir
 	var buf bytes.Buffer
 	cmd.Stdout = &buf
 	cmd.Stderr = &buf
