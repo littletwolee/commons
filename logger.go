@@ -26,9 +26,10 @@ type logger struct {
 }
 
 func GetLogger() *Log {
-	if consLogger == nil {
-		consLogger = &Log{}
+	if consLogger != nil {
+		return consLogger
 	}
+	consLogger = &Log{}
 	logPath := ConsConfig.GetValue("logs", "path")
 	logPath, err := consFile.FormatPath(logPath)
 	if err != nil {
