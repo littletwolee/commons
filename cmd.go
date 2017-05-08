@@ -30,7 +30,9 @@ func GetCmd() *Cmd {
 // @Returns output:string err:error
 func (c *Cmd) ExecCommand(command string, pars []string, cmddir string, isStdout bool) (string, error) {
 	cmd := exec.Command(command, pars...)
-	cmd.Dir = cmddir
+	if cmddir != "" {
+		cmd.Dir = cmddir
+	}
 	var buf bytes.Buffer
 	cmd.Stdout = &buf
 	cmd.Stderr = &buf
