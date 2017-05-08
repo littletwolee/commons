@@ -78,8 +78,8 @@ RETURN:
 	return log
 }
 
-// @Title checkErr
-// @Description check error
+// @Title LogErr
+// @Description log error
 // @Parameters
 //             errin            error          error
 func (l *Log) LogErr(errin error) {
@@ -117,19 +117,53 @@ func (l *Log) LogMsg(msg string) {
 // @Parameters
 //            msg            string          msg
 func (l *Log) LogPanic(errin error) {
-	l.PanicLog.RWMutex.Lock()
-	defer l.PanicLog.RWMutex.Unlock()
-	file, err := consFile.OpenFile(l.PanicLog.Path, os.O_CREATE|os.O_APPEND|os.O_WRONLY)
-	if err != nil {
-		logrus.Error(err)
+	if errin != nil {
+		l.PanicLog.RWMutex.Lock()
+		defer l.PanicLog.RWMutex.Unlock()
+		file, err := consFile.OpenFile(l.PanicLog.Path, os.O_CREATE|os.O_APPEND|os.O_WRONLY)
+		if err != nil {
+			logrus.Error(err)
+		}
+		defer file.Close()
+		l.PanicLog.Log.Out = file
+		pc, _, line, _ := runtime.Caller(1)
+		funcName := runtime.FuncForPC(pc).Name()
+		l.PanicLog.Log.WithFields(logrus.Fields{
+			"func": funcName[:len(funcName)-2],
+			"line": line,
+		}).Panic(errin)
 	}
-	defer file.Close()
-	l.PanicLog.Log.Out = file
-	pc, _, line, _ := runtime.Caller(1)
-	funcName := runtime.FuncForPC(pc).Name()
-	l.PanicLog.Log.WithFields(logrus.Fields{
-		"func": funcName[:len(funcName)-2],
-		"line": line,
-	}).Panic(errin)
+}
 
+// @Title OutErr
+// @Description out put error
+// @Parameters
+//             errin            error          error
+func (l *Log) OutErr(errin error) {
+	if errin != nil {
+		l.ErrLog.Log.Info(errin)
+	}
+}
+
+// @Title OutMsg
+// @Description out put msg
+// @Parameters
+//            msg            string          msg
+func (l *Log) OutMsg(msg string) {
+	l.MsgLog.Log.Info(msg)
+}
+
+// @Title OutPanic
+// @Description out put panic
+// @Parameters
+//            errin            error          error
+func (l *Log) OutPanic(errin error) {
+	if errin != nil {
+		pc, _, line, _ := runtime.Caller(1)
+		funcName := runtime.FuncForPC(pc).Name()
+		l.PanicLog.Log.WithFields(logrus.Fields{
+			"func": funcName[:len(funcName)-2],
+			"line": line,
+		}).Panic(errin)
+	}
 }
