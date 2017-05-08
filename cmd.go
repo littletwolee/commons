@@ -2,6 +2,7 @@ package commons
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os/exec"
 )
@@ -31,13 +32,19 @@ func (c *Cmd) ExecCommand(command string, pars []string, cmddir string) (string,
 	if cmddir != "" {
 		cmd.Dir = cmddir
 	}
-	var buf bytes.Buffer
-	cmd.Stdout = &buf
-	cmd.Stderr = &buf
+	var resultbuf bytes.Buffer
+	var errbuf bytes.Buffer
+	cmd.Stdout = &resultbuf
+	cmd.Stderr = &errbuf
 	err := cmd.Run()
-	out := buf.Bytes()
+	outresultbuf := resultbuf.Bytes()
+	outerrbuf := errbuf.Bytes()
 	if err != nil {
-		GetLogger().LogErr(err)
+		return "", err
 	}
-	return fmt.Sprintf("%s", out), nil
+	if len(outerrbuf) > 0 {
+		err = errors.New(fmt.Sprintf("%s", outerrbuf))
+		return "", err
+	}
+	return fmt.Sprintf("%s", outresultbuf), nil
 }
