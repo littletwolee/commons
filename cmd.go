@@ -1,9 +1,10 @@
 package commons
 
 import (
-	"bytes"
-	"errors"
+	"bufio"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"os/exec"
 )
 
@@ -23,28 +24,44 @@ func GetCmd() *Cmd {
 // @Title ExecCommand
 // @Description exec command
 // @Parameters
-//                  command                *exec.Cmd        cmd point
+//                  commandName            *exec.Cmd        cmd point
+//                  rootdir                string           dir of exec
 //                  paras                  []string         parparameters
-//                  cmddir                 string           dir of exec
-// @Returns output:string err:error
-func (c *Cmd) ExecCommand(command string, pars []string, cmddir string) (string, error) {
-	cmd := exec.Command(command, pars...)
-	if cmddir != "" {
-		cmd.Dir = cmddir
+//                  isOutput               bool             is output in os
+// @Returns output:string outerr:string err:error
+func (c *Cmd) ExecCommand(commandName, rootDir string, params []string, isOutput bool) (string, string, error) {
+	var (
+		cmd *exec.Cmd
+	)
+	if params == nil || len(params) == 0 {
+		cmd = exec.Command(commandName)
+	} else {
+		cmd = exec.Command(commandName, params...)
 	}
-	var resultbuf bytes.Buffer
-	var errbuf bytes.Buffer
-	cmd.Stdout = &resultbuf
-	cmd.Stderr = &errbuf
-	err := cmd.Run()
-	outresultbuf := resultbuf.Bytes()
-	outerrbuf := errbuf.Bytes()
+	cmd.Dir = rootDir
+	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
-	if len(outerrbuf) > 0 {
-		err = errors.New(fmt.Sprintf("%s", outerrbuf))
-		return "", err
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return "", "", err
 	}
-	return fmt.Sprintf("%s", outresultbuf), nil
+	if isOutput {
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+	}
+	cmd.Start()
+	readerout := bufio.NewReader(stdout)
+	strout, err := ioutil.ReadAll(readerout)
+	if err != nil {
+		return "", "", err
+	}
+	readererr := bufio.NewReader(stderr)
+	strerr, err := ioutil.ReadAll(readererr)
+	if err != nil {
+		return "", "", err
+	}
+	cmd.Wait()
+	return fmt.Sprintf("%s", strout), fmt.Sprintf("%s", strerr), err
 }
