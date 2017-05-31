@@ -55,7 +55,7 @@ func (l *Log) getNew(logLevel, logPath string) *logger {
 	var (
 		log      *logger
 		err      error
-		consFile *file
+		consFile *File
 	)
 	consFile = GetFile()
 	logPath, err = consFile.FormatPath(logPath)
