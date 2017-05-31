@@ -10,15 +10,15 @@ import (
 )
 
 var (
-	consFile     *file
+	consFile     *File
 	fileCacheDir string
 )
 
-type file struct{}
+type File struct{}
 
-func GetFile() *file {
+func GetFile() *File {
 	if consFile == nil {
-		consFile = &file{}
+		consFile = &File{}
 	}
 	return consFile
 	// fileCacheDir = ConsConfigHelper.GetValue("filecache", "path")
@@ -31,7 +31,7 @@ func GetFile() *file {
 //            path              string          file/directory path
 //            iscreate          bool            need to create directory?
 // @Returns err:error
-func (f *file) PathExists(path string, iscreate bool) error {
+func (f *File) PathExists(path string, iscreate bool) error {
 	var (
 		err error
 	)
@@ -63,7 +63,7 @@ RETURN:
 // @Parameters
 //            path              string       path
 // @Returns list:[]os.FileInfo err:error
-func (f *file) GetFilesInfo(path string) ([]os.FileInfo, error) {
+func (f *File) GetFilesInfo(path string) ([]os.FileInfo, error) {
 	var (
 		err     error
 		dirList []os.FileInfo
@@ -109,7 +109,7 @@ RETURN:
 // @Parameters
 //            path            string        file path
 // @Returns file extension:string err:error
-func (f *file) GetFileExtension(path string) (string, error) {
+func (f *File) GetFileExtension(path string) (string, error) {
 	var (
 		index int
 		err   error
@@ -168,7 +168,7 @@ RETURN:
 // @Parameters
 //            path              string       path
 // @Returns err:error
-func (f *file) PathDel(path string) error {
+func (f *File) PathDel(path string) error {
 	var (
 		err error
 	)
@@ -188,7 +188,7 @@ RETURN:
 //            path            string           path
 //            flags           int              flags
 // @Returns writer:*os.File err:error
-func (f *file) OpenFile(path string, flags int) (*os.File, error) {
+func (f *File) OpenFile(path string, flags int) (*os.File, error) {
 	var (
 		err  error
 		file *os.File
@@ -208,7 +208,7 @@ RETURN:
 // @Parameters
 //            path              string       path
 // @Returns path:string err:error
-func (f *file) FormatPath(path string) (string, error) {
+func (f *File) FormatPath(path string) (string, error) {
 	var (
 		err         error
 		currentPath string
@@ -233,7 +233,7 @@ RETURN:
 // @Title FormatPath
 // @Description format path from xx/xx to xx/xx/
 // @Returns path:string err:error
-func (f *file) GetCurrentDirectory() (string, error) {
+func (f *File) GetCurrentDirectory() (string, error) {
 	var (
 		err         error
 		currentPath string
@@ -255,7 +255,7 @@ RETURN:
 // @Parameters
 //            path              string       path
 // @Returns data:[]byte err:error
-func (f *file) ReadFile(path string) ([]byte, error) {
+func (f *File) ReadFile(path string) ([]byte, error) {
 	var (
 		data []byte
 		err  error
