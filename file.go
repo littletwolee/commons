@@ -86,7 +86,7 @@ RETURN:
 // @Parameters
 //            path           string       path
 // @Returns file name:string err:error
-func (f *file) GetFileFullNameByPath(path string) (string, error) {
+func (f *File) GetFileFullNameByPath(path string) (string, error) {
 	var (
 		index int
 		err   error
@@ -139,7 +139,7 @@ RETURN:
 // @Parameters
 //            filename      string                    file name
 // @Returns file name:string err:error
-func (f *file) GetFileNameByPath(path string) (string, error) {
+func (f *File) GetFileNameByPath(path string) (string, error) {
 	var (
 		index int
 		err   error
