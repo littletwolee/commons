@@ -2,10 +2,11 @@ package commons
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"os"
 	"runtime"
 	"sync"
+
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -30,7 +31,7 @@ func GetLogger() *Log {
 		return consLogger
 	}
 	consLogger = &Log{}
-	logPath := ConsConfig.GetValue("logs", "path")
+	logPath := Config.GetString("logs.path")
 	logPath, err := consFile.FormatPath(logPath)
 	if err != nil {
 		logrus.Panic(err)
