@@ -8,7 +8,6 @@ var Config *viper.Viper
 
 func init() {
 	Config = viper.New()
-	Config.WatchConfig()
 	Config.SetConfigName("app")
 	Config.AddConfigPath("config/")
 	if err := Config.ReadInConfig(); err != nil {
