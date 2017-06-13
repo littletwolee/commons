@@ -3,6 +3,7 @@ package commons
 import (
 	"errors"
 	"fmt"
+
 	lib "github.com/dgrijalva/jwt-go"
 )
 
@@ -19,7 +20,7 @@ func GetJwt() *Jwt {
 		consJwt = &Jwt{}
 	}
 	consLogger := GetLogger()
-	keyPath := ConsConfig.GetValue("hmac", "path")
+	keyPath := Config.GetString("hmac.path")
 	consFile := GetFile()
 	keyData, err := consFile.ReadFile(keyPath)
 	if err != nil {
