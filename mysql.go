@@ -3,6 +3,8 @@ package commons
 import (
 	"fmt"
 
+	"errors"
+
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
@@ -95,7 +97,11 @@ func getDB(address, userName, passWord, dataBase string) (*gorm.DB, error) {
 //       result          interface{}     return model
 // @Returns err:error
 func (m *mysqlHelper) FindOne(sqlRule *SQLRule, result interface{}) error {
-	err := m.SlaveDb.Table(sqlRule.Table).Where(sqlRule.Where.Sentence, sqlRule.Where.Parameters...).First(result).Error
+	err := checkWhere(sqlRule.Where)
+	if err != nil {
+		return err
+	}
+	err = m.SlaveDb.Table(sqlRule.Table).Where(sqlRule.Where.Sentence, sqlRule.Where.Parameters...).First(result).Error
 	if err != nil {
 		return err
 	}
@@ -109,7 +115,16 @@ func (m *mysqlHelper) FindOne(sqlRule *SQLRule, result interface{}) error {
 //       result          []interface{}     return []model
 // @Returns err:error
 func (m *mysqlHelper) FindAll(sqlRule *SQLRule, result interface{}) error {
-	err := m.SlaveDb.Table(sqlRule.Table).Where(sqlRule.Where.Sentence, sqlRule.Where.Parameters...).Find(result).Error
+	var (
+		err    error
+		gormdb *gorm.DB
+	)
+	gormdb = m.SlaveDb.Table(sqlRule.Table)
+	err = checkWhere(sqlRule.Where)
+	if err != nil {
+		gormdb = gormdb.Where(sqlRule.Where.Sentence, sqlRule.Where.Parameters...)
+	}
+	err = gormdb.Find(result).Error
 	if err != nil {
 		return err
 	}
@@ -123,7 +138,16 @@ func (m *mysqlHelper) FindAll(sqlRule *SQLRule, result interface{}) error {
 //       result          []interface{}     return []model
 // @Returns err:error
 func (m *mysqlHelper) FindByPaging(sqlRule *SQLRule, result interface{}) error {
-	err := m.SlaveDb.Table(sqlRule.Table).Where(sqlRule.Where).Limit(sqlRule.Limit).Offset(sqlRule.OffSet).Find(result).Error
+	var (
+		err    error
+		gormdb *gorm.DB
+	)
+	gormdb = m.SlaveDb.Table(sqlRule.Table)
+	err = checkWhere(sqlRule.Where)
+	if err != nil {
+		gormdb = gormdb.Where(sqlRule.Where.Sentence, sqlRule.Where.Parameters...)
+	}
+	err = gormdb.Limit(sqlRule.Limit).Offset(sqlRule.OffSet).Find(result).Error
 	if err != nil {
 		return err
 	}
@@ -149,9 +173,13 @@ func (m *mysqlHelper) Insert(sqlRule *SQLRule, model interface{}) error {
 // @Parameters
 //       sqlRule         *SQLRule        sqlrule
 //       result          []interface{}     return []model
-// @Returns
+// @Returns err:error
 func (m *mysqlHelper) Update(sqlRule *SQLRule, v interface{}, u map[string]interface{}) error {
-	err := m.MasterDB.Table(sqlRule.Table).Model(v).Where(sqlRule.Where.Sentence, sqlRule.Where.Parameters...).Update(u).Error
+	err := checkWhere(sqlRule.Where)
+	if err != nil {
+		return err
+	}
+	err = m.MasterDB.Table(sqlRule.Table).Model(v).Where(sqlRule.Where.Sentence, sqlRule.Where.Parameters...).Update(u).Error
 	if err != nil {
 		return err
 	}
@@ -162,12 +190,23 @@ func (m *mysqlHelper) Update(sqlRule *SQLRule, v interface{}, u map[string]inter
 // @Description delete model by model
 // @Parameters
 //       sqlRule         *SQLRule        sqlrule
-//       model          []interface{}     return []model
-// @Returns
+//       model          interface{}     model
+// @Returns err:error
 func (m *mysqlHelper) Delete(sqlRule *SQLRule, model interface{}) error {
-	err := m.MasterDB.Table(sqlRule.Table).Delete(model).Error
+	err := checkWhere(sqlRule.Where)
 	if err != nil {
 		return err
+	}
+	err = m.MasterDB.Table(sqlRule.Table).Where(sqlRule.Where.Sentence, sqlRule.Where.Parameters...).Delete(model).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func checkWhere(where *Where) error {
+	if where == nil || where.Sentence == "" || where.Parameters == nil {
+		return errors.New("undefined where parameters")
 	}
 	return nil
 }
