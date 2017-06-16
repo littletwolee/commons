@@ -121,7 +121,7 @@ func (m *mysqlHelper) FindAll(sqlRule *SQLRule, result interface{}) error {
 	)
 	gormdb = m.SlaveDb.Table(sqlRule.Table)
 	err = checkWhere(sqlRule.Where)
-	if err != nil {
+	if err == nil {
 		gormdb = gormdb.Where(sqlRule.Where.Sentence, sqlRule.Where.Parameters...)
 	}
 	err = gormdb.Find(result).Error
@@ -144,7 +144,7 @@ func (m *mysqlHelper) FindByPaging(sqlRule *SQLRule, result interface{}) error {
 	)
 	gormdb = m.SlaveDb.Table(sqlRule.Table)
 	err = checkWhere(sqlRule.Where)
-	if err != nil {
+	if err == nil {
 		gormdb = gormdb.Where(sqlRule.Where.Sentence, sqlRule.Where.Parameters...)
 	}
 	err = gormdb.Limit(sqlRule.Limit).Offset(sqlRule.OffSet).Find(result).Error
