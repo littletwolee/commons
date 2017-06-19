@@ -10,6 +10,16 @@ const (
 )
 
 const (
+	ASC  = "ASC"
+	DESC = "DESC"
+)
+
+const (
+	LEFT  = "left"
+	RIGHT = "right"
+)
+
+const (
 	HtpGet      = http.MethodGet
 	HttpPost    = http.MethodPost
 	HttpPut     = http.MethodPut

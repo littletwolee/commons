@@ -5,6 +5,8 @@ import (
 
 	"errors"
 
+	"strings"
+
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
@@ -19,14 +21,25 @@ type mysqlHelper struct {
 
 type SQLRule struct {
 	Table  string
-	Where  *Where
+	Select []string
+	Where  *Conditions
 	Limit  interface{}
 	OffSet interface{}
+	Group  []string
+	Order  map[string]string
+	Having *Conditions
+	Joins  []*Join
 }
 
-type Where struct {
+type Conditions struct {
 	Sentence   string
 	Parameters []interface{}
+}
+
+type Join struct {
+	Direction string
+	JoinTable string
+	On        string
 }
 
 func GetMysqlHelper() *mysqlHelper {
@@ -97,11 +110,19 @@ func getDB(address, userName, passWord, dataBase string) (*gorm.DB, error) {
 //       result          interface{}     return model
 // @Returns err:error
 func (m *mysqlHelper) FindOne(sqlRule *SQLRule, result interface{}) error {
-	err := checkWhere(sqlRule.Where)
+	var (
+		err    error
+		gormdb *gorm.DB
+	)
+	err = checkWhere(sqlRule.Where)
 	if err != nil {
 		return err
 	}
-	err = m.SlaveDb.Table(sqlRule.Table).Where(sqlRule.Where.Sentence, sqlRule.Where.Parameters...).First(result).Error
+	gormdb, err = setUpGormDB(sqlRule)
+	if err != nil {
+		return err
+	}
+	err = gormdb.Where(sqlRule.Where.Sentence, sqlRule.Where.Parameters...).First(result).Error
 	if err != nil {
 		return err
 	}
@@ -119,7 +140,10 @@ func (m *mysqlHelper) FindAll(sqlRule *SQLRule, result interface{}) error {
 		err    error
 		gormdb *gorm.DB
 	)
-	gormdb = m.SlaveDb.Table(sqlRule.Table)
+	gormdb, err = setUpGormDB(sqlRule)
+	if err != nil {
+		return err
+	}
 	err = checkWhere(sqlRule.Where)
 	if err == nil {
 		gormdb = gormdb.Where(sqlRule.Where.Sentence, sqlRule.Where.Parameters...)
@@ -142,7 +166,10 @@ func (m *mysqlHelper) FindByPaging(sqlRule *SQLRule, result interface{}) error {
 		err    error
 		gormdb *gorm.DB
 	)
-	gormdb = m.SlaveDb.Table(sqlRule.Table)
+	gormdb, err = setUpGormDB(sqlRule)
+	if err != nil {
+		return err
+	}
 	err = checkWhere(sqlRule.Where)
 	if err == nil {
 		gormdb = gormdb.Where(sqlRule.Where.Sentence, sqlRule.Where.Parameters...)
@@ -161,7 +188,15 @@ func (m *mysqlHelper) FindByPaging(sqlRule *SQLRule, result interface{}) error {
 //       model          interface{}      insert model
 // @Returns err:error
 func (m *mysqlHelper) Insert(sqlRule *SQLRule, model interface{}) error {
-	err := m.SlaveDb.Table(sqlRule.Table).Save(model).Error
+	var (
+		err    error
+		gormdb *gorm.DB
+	)
+	gormdb, err = setUpGormDB(sqlRule)
+	if err != nil {
+		return err
+	}
+	err = gormdb.Save(model).Error
 	if err != nil {
 		return err
 	}
@@ -171,15 +206,23 @@ func (m *mysqlHelper) Insert(sqlRule *SQLRule, model interface{}) error {
 // @Title Update
 // @Description update model by parameters
 // @Parameters
-//       sqlRule         *SQLRule        sqlrule
-//       result          []interface{}     return []model
+//       sqlRule         *SQLRule                   sqlrule
+//       u               map[string]interface{}     modify
 // @Returns err:error
-func (m *mysqlHelper) Update(sqlRule *SQLRule, v interface{}, u map[string]interface{}) error {
-	err := checkWhere(sqlRule.Where)
+func (m *mysqlHelper) Update(sqlRule *SQLRule, u map[string]interface{}) error {
+	var (
+		err    error
+		gormdb *gorm.DB
+	)
+	gormdb, err = setUpGormDB(sqlRule)
 	if err != nil {
 		return err
 	}
-	err = m.MasterDB.Table(sqlRule.Table).Model(v).Where(sqlRule.Where.Sentence, sqlRule.Where.Parameters...).Update(u).Error
+	err = checkWhere(sqlRule.Where)
+	if err != nil {
+		return err
+	}
+	err = gormdb.Debug().Where(sqlRule.Where.Sentence, sqlRule.Where.Parameters...).Updates(u).Error
 	if err != nil {
 		return err
 	}
@@ -193,22 +236,77 @@ func (m *mysqlHelper) Update(sqlRule *SQLRule, v interface{}, u map[string]inter
 //       model          interface{}     model
 // @Returns err:error
 func (m *mysqlHelper) Delete(sqlRule *SQLRule, model interface{}) error {
-	err := checkWhere(sqlRule.Where)
+	var (
+		err    error
+		gormdb *gorm.DB
+	)
+	gormdb, err = setUpGormDB(sqlRule)
 	if err != nil {
 		return err
 	}
-	err = m.MasterDB.Table(sqlRule.Table).Where(sqlRule.Where.Sentence, sqlRule.Where.Parameters...).Delete(model).Error
+	err = checkWhere(sqlRule.Where)
+	if err != nil {
+		return err
+	}
+	err = gormdb.Where(sqlRule.Where.Sentence, sqlRule.Where.Parameters...).Delete(model).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func checkWhere(where *Where) error {
+func checkWhere(where *Conditions) error {
 	if where == nil || where.Sentence == "" || where.Parameters == nil {
 		return errors.New("undefined where parameters")
 	}
 	return nil
+}
+
+func setUpGormDB(sqlRule *SQLRule) (*gorm.DB, error) {
+	var (
+		err    error
+		gormdb *gorm.DB
+	)
+	if sqlRule == nil {
+		err = errors.New("sqlrule is nil")
+		goto ERR
+	}
+	if sqlRule.Table == "" {
+		err = errors.New("table is empty")
+		goto ERR
+	}
+	gormdb = GetMysqlHelper().SlaveDb.Table(sqlRule.Table).Debug()
+	if sqlRule.Order != nil {
+		for k, v := range sqlRule.Order {
+			gormdb = gormdb.Order(fmt.Sprintf("%s %s", k, v))
+		}
+	}
+	if sqlRule.Group != nil && len(sqlRule.Group) > 0 {
+		for _, v := range sqlRule.Group {
+			if !strings.Contains(v, ",") {
+				gormdb = gormdb.Group(v)
+			}
+
+		}
+	}
+	if sqlRule.Having != nil && sqlRule.Having.Parameters != nil && sqlRule.Having.Sentence != "" {
+		gormdb = gormdb.Having(sqlRule.Having.Sentence, sqlRule.Having.Parameters...)
+	}
+	if sqlRule.Joins != nil && len(sqlRule.Joins) > 0 {
+		for _, v := range sqlRule.Joins {
+			if v.Direction != "" && v.JoinTable != "" && v.On != "" {
+				gormdb = gormdb.Joins(fmt.Sprintf("%s join %s on %s", v.Direction, v.JoinTable, v.On))
+			}
+		}
+	}
+	if sqlRule.Select != nil && len(sqlRule.Select) > 0 {
+		gormdb = gormdb.Select(sqlRule.Select)
+	}
+	goto RETURN
+ERR:
+	return gormdb, err
+RETURN:
+	return gormdb, err
 }
 
 // // @Title name
