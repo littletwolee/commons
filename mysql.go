@@ -7,12 +7,15 @@ import (
 
 	"strings"
 
+	"strconv"
+
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
 
 var (
 	consMysqlHelper *mysqlHelper
+	isDbug          bool
 )
 
 type mysqlHelper struct {
@@ -59,17 +62,26 @@ func GetMysqlHelper() *mysqlHelper {
 // @Parameters
 // @Returns
 func (m *mysqlHelper) MysqlInit() {
+	var (
+		err               error
+		masterDB, slaveDB *gorm.DB
+	)
 	master := Config.GetString("mysql.master")
 	slave := Config.GetString("mysql.slave")
 	dataBase := Config.GetString("mysql.database")
 	userName := Config.GetString("mysql.username")
 	passWord := Config.GetString("mysql.password")
-	masterDB, err := getDB(master, userName, passWord, dataBase)
+	isDebugStr := Config.GetString("mysql.isdebug")
+	isDbug, err = strconv.ParseBool(isDebugStr)
+	if err != nil {
+		isDbug = true
+	}
+	masterDB, err = getDB(master, userName, passWord, dataBase)
 	if err != nil {
 		GetLogger().LogPanic(err)
 	}
 	m.MasterDB = masterDB
-	slaveDB, err := getDB(slave, userName, passWord, dataBase)
+	slaveDB, err = getDB(slave, userName, passWord, dataBase)
 	if err != nil {
 		GetLogger().LogPanic(err)
 	}
@@ -222,7 +234,7 @@ func (m *mysqlHelper) Update(sqlRule *SQLRule, u map[string]interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = gormdb.Debug().Where(sqlRule.Where.Sentence, sqlRule.Where.Parameters...).Updates(u).Error
+	err = gormdb.Where(sqlRule.Where.Sentence, sqlRule.Where.Parameters...).Updates(u).Error
 	if err != nil {
 		return err
 	}
@@ -275,7 +287,10 @@ func setUpGormDB(sqlRule *SQLRule) (*gorm.DB, error) {
 		err = errors.New("table is empty")
 		goto ERR
 	}
-	gormdb = GetMysqlHelper().SlaveDb.Table(sqlRule.Table).Debug()
+	gormdb = GetMysqlHelper().SlaveDb.Table(sqlRule.Table)
+	if isDbug {
+		gormdb = gormdb.Debug()
+	}
 	if sqlRule.Order != nil {
 		for k, v := range sqlRule.Order {
 			gormdb = gormdb.Order(fmt.Sprintf("%s %s", k, v))
