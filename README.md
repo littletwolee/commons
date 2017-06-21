@@ -1,4 +1,4 @@
-# tools libraries by golang language
+# tools libraries for golang language
 
 ### Summary
 
