@@ -28,6 +28,15 @@ const (
 )
 
 const (
+	YEAR = iota
+	MONTH
+	DAY
+	HOUR
+	MINUTE
+	SECOND
+)
+
+const (
 	StatusContinue           = 100
 	StatusSwitchingProtocols = 101
 
