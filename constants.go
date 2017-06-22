@@ -5,8 +5,10 @@ import (
 )
 
 const (
-	ErrorPathEmpty = "Your path is empty?"
-	ErrorParse     = "Failed parse log level"
+	ERROR_Path_EMPTY           = "Your path is empty?"
+	ERROR_PARSE                = "Failed parse log level"
+	ERROR_PARAMETER_SQL_ATTACK = "Value [%s] is a sensitive word"
+	ERROR_PARAMETER_EMPTY      = "Parameter is empty"
 )
 
 const (

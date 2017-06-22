@@ -71,7 +71,7 @@ func (l *Log) getNew(logLevel, logPath string) *logger {
 	log.Log.Formatter = new(logrus.TextFormatter)
 	level, err := logrus.ParseLevel(logLevel)
 	if err != nil {
-		logrus.Error(ErrorParse)
+		logrus.Error(ERROR_PARSE)
 	}
 	log.Log.Level = level
 	goto RETURN

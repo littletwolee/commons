@@ -20,7 +20,7 @@ func GetJwt() *Jwt {
 		consJwt = &Jwt{}
 	}
 	consLogger := GetLogger()
-	keyPath := Config.GetString("hmac.path")
+	keyPath := Config.GetString("jwt.path")
 	consFile := GetFile()
 	keyData, err := consFile.ReadFile(keyPath)
 	if err != nil {

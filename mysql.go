@@ -2,6 +2,8 @@ package commons
 
 import (
 	"fmt"
+	"reflect"
+	"regexp"
 
 	"errors"
 
@@ -324,32 +326,53 @@ RETURN:
 	return gormdb, err
 }
 
-// // @Title name
-// // @Description
+// // @Title SQLInjectionAttack
+// // @Description check interface sql injection attack
 // // @Parameters
-// //
-// // @Returns err:error
-// func (m *MysqlHelper) SQLInjectionAttack(value string) (string, error) {
-// 	var (
-// 		re  *regexp.Regexp
-// 		err error
-// 	)
-// 	str := `(?:')|(?:--)|(/\\*(?:.|[\\n\\r])*?\\*/)|(\b(select|update|and|or|delete|insert|trancate|char|chr|into|substr|ascii|declare|exec|count|master|into|drop|execute)\b)`
-// 	re, err = regexp.Compile(str)
-// 	if err != nil {
-// 		value = ""
-// 		goto RESULT
-// 	}
-// 	if value == "" {
-// 		err = errors.New(PARAMETER_EMPTY)
-// 		goto RESULT
-// 	}
-// 	if re.MatchString(value) {
-// 		err = errors.New(fmt.Sprintf("%s:%s", PARAMETER_SQL_ATTACK, value))
-// 		value = ""
-// 		goto RESULT
-// 	}
-// 	goto RESULT
-// RESULT:
-// 	return value, err
-// }
+// //          value          interface{}           parameter
+// // @Returns value:interface{} err:error
+func (m *mysqlHelper) SQLInjectionAttack(value interface{}) (interface{}, error) {
+	if value == nil || value == "" {
+		return nil, fmt.Errorf(ERROR_PARAMETER_EMPTY)
+	}
+	switch value.(type) {
+	case string:
+		return attackCheck(value.(string))
+	default:
+		object := reflect.ValueOf(value)
+		for i := 0; i < object.NumField(); i++ {
+			field := object.Field(i)
+			_, err := attackCheck(field.Interface())
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	return value, nil
+}
+
+func attackCheck(value interface{}) (interface{}, error) {
+	var (
+		re  *regexp.Regexp
+		err error
+		v   string
+	)
+	str := `(?:')|(?:--)|(/\\*(?:.|[\\n\\r])*?\\*/)|(\b(select|update|and|or|delete|insert|trancate|char|chr|into|substr|ascii|declare|exec|count|master|into|drop|execute)\b)`
+	re, err = regexp.Compile(str)
+	if err != nil {
+		value = ""
+		goto RESULT
+	}
+	v = fmt.Sprint(value)
+	if v == "" {
+		return "", fmt.Errorf(ERROR_PARAMETER_EMPTY)
+	}
+	if re.MatchString(v) {
+		err = fmt.Errorf(ERROR_PARAMETER_SQL_ATTACK, value)
+		value = ""
+		goto RESULT
+	}
+	goto RESULT
+RESULT:
+	return value, err
+}
