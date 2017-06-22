@@ -7,7 +7,8 @@ import (
 )
 
 var (
-	consCheck *check
+	consCheck        *check
+	defaultCheckList string = "select|update|and|or|delete|insert|trancate|char|chr|into|substr|ascii|declare|exec|count|master|into|drop|execute"
 )
 
 type check struct {
@@ -18,6 +19,9 @@ func GetCheck() *check {
 	if consCheck == nil {
 		consCheck = &check{
 			CheckList: Config.GetString("check.sqlinjection"),
+		}
+		if consCheck.CheckList == "" {
+			consCheck.CheckList = defaultCheckList
 		}
 	}
 	return consCheck
