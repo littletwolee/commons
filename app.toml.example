@@ -1,0 +1,23 @@
+[logs]
+path = # log file folder path  like "logs"
+[mysql]
+master = # mysql master server address like "127.0.0.1:3306"
+slave = # mysql slave server address like "127.0.0.1:3306"
+database = #database name like "test"
+username = # mysql username like "root"
+password = # mysql password like "root"
+[jwt]
+path = # jwt-key file path "auth.key"
+[check]
+sqlinjection = # sql injection words like  "select|update|and|or|delete|insert|trancate|char|chr|into|substr|ascii|declare|exec|count|master|into|drop|execute"
+[redis]
+address = # redis server address like "127.0.0.1:6379"
+password = # redis password like "test"
+maxIdle = # Maximum idle number like 20
+maxActive = # maximum connection like 200
+idleTimeout = # time out (second) like 180
+[session]
+maxdeadline = # totle deadline like 604800
+maxage = # inoperation deadline like 7200
+keypaire = # security key like "session-key"
+name = #the name of session para key like "session_id"
