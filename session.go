@@ -32,7 +32,7 @@ func GetCSession() *CSession {
 	if consCSession == nil {
 		consCSession = &CSession{}
 	}
-	DefaultKey = Config.GetString("session.defaultkey")
+	DefaultKey = Config.GetString("session.keypaire")
 	consCSession.Name = Config.GetString("session.name")
 	maxAgeStr := Config.GetString("session.maxage")
 	consCSession.maxAge, err = strconv.Atoi(maxAgeStr)
