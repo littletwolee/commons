@@ -21,6 +21,14 @@ const (
 	RIGHT = "right"
 )
 
+//es
+const (
+	ES_INDEX_NOT_EXISTS = "index is not exists"
+	ES_GTE              = "gte"
+	ES_LTE              = "lte"
+	ES_ERROR_DATA_EMPTY = "data is empty"
+)
+
 const (
 	HtpGet      = http.MethodGet
 	HttpPost    = http.MethodPost

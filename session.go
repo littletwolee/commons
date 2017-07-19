@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/context"
 	sessions "github.com/littletwolee/gin-sessions"
-	//"github.com/gorilla/sessions"
 )
 
 var (
@@ -25,6 +24,10 @@ type CSession struct {
 	Store  sessions.RedisStore
 }
 
+// @Title GetCSession
+// @Description init & get CSession point
+// @Parameters
+// @Returns csession:*CSession
 func GetCSession() *CSession {
 	var (
 		err error
@@ -59,6 +62,10 @@ func GetCSession() *CSession {
 	return consCSession
 }
 
+// @Title newPool
+// @Description create a new connection pool
+// @Parameters
+// @Returns pool:*redigo.Pool
 func newPool() *redigo.Pool {
 	return &redigo.Pool{
 		MaxIdle:     maxIdle,
@@ -87,6 +94,10 @@ func newPool() *redigo.Pool {
 	}
 }
 
+// @Title NewStore
+// @Description get a new store
+// @Parameters
+// @Returns store:sessions.RedisStore err:error
 func (r *CSession) NewStore() (sessions.RedisStore, error) {
 	if r.Store != nil {
 		return r.Store, nil
@@ -102,6 +113,11 @@ func (r *CSession) NewStore() (sessions.RedisStore, error) {
 	return store, nil
 }
 
+// @Title DefaultSession
+// @Description get default session
+// @Parameters
+//       c         *gin.Context          gin context
+// @Returns err:error
 func (r *CSession) DefaultSession(c *gin.Context) error {
 	store, err := r.NewStore()
 	if err != nil {
