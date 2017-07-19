@@ -34,10 +34,13 @@ func GetES() *es {
 		esHelper = &es{}
 	}
 	address := Config.GetString("es.address")
+	username := Config.GetString("es.username")
+	password := Config.GetString("es.password")
 	ctx := context.Background()
 	client, err = elastic.NewClient(
 		elastic.SetURL(address),
 		elastic.SetSniff(false),
+		elastic.SetBasicAuth(username, password),
 	)
 	if err != nil {
 		GetLogger().LogPanic(err)
