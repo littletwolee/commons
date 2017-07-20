@@ -13,9 +13,10 @@ import (
 )
 
 var (
-	esHelper *es
-	client   *elastic.Client
-	ctx      = context.Background()
+	esHelper   *es
+	client     *elastic.Client
+	ctx        = context.Background()
+	scrollKeep string
 )
 
 type es struct{}
@@ -36,6 +37,7 @@ func GetES() *es {
 	address := Config.GetString("es.address")
 	username := Config.GetString("es.username")
 	password := Config.GetString("es.password")
+	scrollKeep = Config.GetString("es.scrollKeep")
 	ctx := context.Background()
 	client, err = elastic.NewClient(
 		elastic.SetURL(address),
@@ -133,7 +135,7 @@ func (*es) SearchAll(index, _type, sizeStr string, sort map[string]bool) ([]byte
 //            sizeStr          string						page size
 //            scrollID         string                       scroll id
 // @Returns result:[]byte scrollId:string err:error
-func (*es) FuzzyScroll(must, mustNot, should map[string]interface{}, sort map[string]bool, index, _type, sizeStr, scrollID string) ([]byte, string, error) {
+func (*es) FuzzyScroll(must, mustNot, should map[string]interface{}, sort map[string]bool, ranges []*RangeQuery, index, _type, sizeStr, scrollID string) ([]byte, string, error) {
 	var (
 		byteResult []byte
 		ess        *elastic.ScrollService
@@ -141,33 +143,46 @@ func (*es) FuzzyScroll(must, mustNot, should map[string]interface{}, sort map[st
 		err        error
 		object     interface{}
 		list       []interface{}
+		rq         *elastic.RangeQuery
 		bq         *elastic.BoolQuery
 		qlist      []elastic.Query
 		size       int
 	)
-	ess = client.Scroll(index).Type(_type)
+	ess = client.Scroll(index).Type(_type).Scroll(scrollKeep)
 	if scrollID == "" {
 		bq = elastic.NewBoolQuery()
 		if must != nil {
 			qlist = []elastic.Query{}
 			for k, v := range must {
-				qlist = append(qlist, elastic.NewMatchQuery(k, v))
+				qlist = append(qlist, elastic.NewMatchPhraseQuery(k, v))
 			}
 			bq = bq.Must(qlist...)
 		}
 		if mustNot != nil {
 			qlist = []elastic.Query{}
 			for k, v := range mustNot {
-				qlist = append(qlist, elastic.NewMatchQuery(k, v))
+				qlist = append(qlist, elastic.NewMatchPhraseQuery(k, v))
 			}
 			bq = bq.MustNot(qlist...)
 		}
 		if should != nil {
 			qlist = []elastic.Query{}
 			for k, v := range should {
-				qlist = append(qlist, elastic.NewMatchQuery(k, v))
+				qlist = append(qlist, elastic.NewMatchPhraseQuery(k, v))
 			}
 			bq = bq.Should(qlist...)
+		}
+		if ranges != nil {
+			for _, v := range ranges {
+				rq = elastic.NewRangeQuery(v.Field)
+				if v.Gte != nil {
+					rq = rq.Gt(v.Gte)
+				}
+				if v.Lte != nil {
+					rq = rq.Lt(v.Lte)
+				}
+				bq = bq.Must(rq)
+			}
 		}
 		ess = ess.Query(bq)
 		if sort != nil {
