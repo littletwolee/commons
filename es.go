@@ -14,7 +14,8 @@ import (
 
 var (
 	esHelper   *es
-	client     *elastic.Client
+	master     *elastic.Client
+	slave      *elastic.Client
 	ctx        = context.Background()
 	scrollKeep string
 )
@@ -28,42 +29,46 @@ type RangeQuery struct {
 }
 
 func GetES() *es {
-	var (
-		err error
-	)
 	if esHelper == nil {
 		esHelper = &es{}
 	}
-	address := Config.GetString("es.address")
-	username := Config.GetString("es.username")
-	password := Config.GetString("es.password")
+	masterAddress := Config.GetString("es.master")
+	slaveAddress := Config.GetString("es.slave")
 	scrollKeep = Config.GetString("es.scrollKeep")
-	ctx := context.Background()
+	master = initClient(masterAddress)
+	slave = initClient(slaveAddress)
+	return esHelper
+}
+
+func initClient(address string) *elastic.Client {
+	var (
+		client *elastic.Client
+		err    error
+	)
 	client, err = elastic.NewClient(
 		elastic.SetURL(address),
 		elastic.SetSniff(false),
-		elastic.SetBasicAuth(username, password),
 	)
 	if err != nil {
 		GetLogger().LogPanic(err)
 	}
-	_, _, err = client.Ping(address).Do(ctx)
+	_, _, err = master.Ping(address).Do(ctx)
 	if err != nil {
 		GetLogger().LogErr(err)
 	}
-	return esHelper
+	return client
 }
 
-func checkIndex(index string) error {
-	exists, err := client.IndexExists(index).Do(context.Background())
-	if err != nil {
-		return err
-	}
-	if !exists {
-		return fmt.Errorf(ES_INDEX_NOT_EXISTS)
-	}
-	return nil
-}
+// func checkIndex(index string) error {
+// 	exists, err := client.IndexExists(index).Do(context.Background())
+// 	if err != nil {
+// 		return err
+// 	}
+// 	if !exists {
+// 		return fmt.Errorf(ES_INDEX_NOT_EXISTS)
+// 	}
+// 	return nil
+// }
 
 // @Title SearchAll
 // @Description Search data from es
@@ -83,7 +88,7 @@ func (*es) SearchAll(index, _type, sizeStr string, sort map[string]bool) ([]byte
 		byteResult []byte
 		size       int
 	)
-	ess = client.Search(index).Type(_type).Query(elastic.NewMatchAllQuery())
+	ess = slave.Search(index).Type(_type).Query(elastic.NewMatchAllQuery())
 	if sort != nil {
 		for k, v := range sort {
 			if v {
@@ -148,7 +153,7 @@ func (*es) FuzzyScroll(must, mustNot, should map[string]interface{}, sort map[st
 		qlist      []elastic.Query
 		size       int
 	)
-	ess = client.Scroll(index).Type(_type).Scroll(scrollKeep)
+	ess = slave.Scroll(index).Type(_type).Scroll(scrollKeep)
 	if scrollID == "" {
 		bq = elastic.NewBoolQuery()
 		if must != nil {
@@ -251,7 +256,7 @@ func (*es) FuzzySearch(must, mustNot, should map[string]interface{}, ranges []*R
 		bq         *elastic.BoolQuery
 		size       int
 	)
-	ess = client.Search(index).Type(_type)
+	ess = slave.Search(index).Type(_type)
 	bq = elastic.NewBoolQuery()
 	if must != nil {
 		qlist = []elastic.Query{}
@@ -356,7 +361,7 @@ func (*es) Search(must, mustNot, should map[string]interface{}, sort map[string]
 		byteResult []byte
 		rq         *elastic.RangeQuery
 	)
-	ess = client.Search(index).Type(_type)
+	ess = slave.Search(index).Type(_type)
 	bq = elastic.NewBoolQuery()
 	if must != nil {
 		mlist = []elastic.Query{}
@@ -447,7 +452,7 @@ func (*es) AssociativeSearch(regexp map[string]string, postFilter map[string]int
 		byteResult []byte
 		size       int
 	)
-	ess = client.Search(index).Type(_type)
+	ess = slave.Search(index).Type(_type)
 	if regexp != nil {
 		for k, v := range regexp {
 			ess = ess.Query(elastic.NewRegexpQuery(k, v))
@@ -506,7 +511,7 @@ func (*es) AssociativeSearch(regexp map[string]string, postFilter map[string]int
 //            id               string                       es _id
 // @Returns err:error
 func (*es) Update(object map[string]interface{}, index, _type, id string) error {
-	_, err := client.Update().
+	_, err := master.Update().
 		Index(index).
 		Type(_type).
 		Id(id).
@@ -528,7 +533,7 @@ func (*es) Update(object map[string]interface{}, index, _type, id string) error 
 //            id               string            es _id
 // @Returns err:error
 func (*es) Insert(object interface{}, index, _type, id string) error {
-	_, err := client.Index().
+	_, err := master.Index().
 		Index(index).
 		Type(_type).
 		Id(id).
@@ -553,7 +558,7 @@ func (*es) BulkInsert(objects []interface{}, index, _type string) error {
 		err error
 		esb *elastic.BulkService
 	)
-	esb = client.Bulk()
+	esb = master.Bulk()
 	if objects != nil && len(objects) > 0 {
 		for _, v := range objects {
 			esb = esb.Add(elastic.NewBulkIndexRequest().Index(index).Type(_type).Id(strconv.Itoa(reflect.ValueOf(v).FieldByName("ID").Interface().(int))).Doc(v))
@@ -580,7 +585,7 @@ func (*es) Delete(index, _type, id string) error {
 		err error
 		esd *elastic.DeleteService
 	)
-	esd = client.Delete().Index(index)
+	esd = master.Delete().Index(index)
 	if _type != "" {
 		esd = esd.Type(_type)
 	}
@@ -608,7 +613,7 @@ func (*es) DeleteByQuery(query map[string]interface{}, index, _type string) erro
 		qlist []elastic.Query
 		flag  = false
 	)
-	esd = client.DeleteByQuery(index).Type(_type)
+	esd = master.DeleteByQuery(index).Type(_type)
 	qlist = []elastic.Query{}
 	if query != nil {
 		for k, v := range query {
