@@ -360,6 +360,7 @@ func (*es) Search(must, mustNot, should map[string]interface{}, sort map[string]
 		object     interface{}
 		byteResult []byte
 		rq         *elastic.RangeQuery
+		size       int
 	)
 	ess = slave.Search(index).Type(_type)
 	bq = elastic.NewBoolQuery()
