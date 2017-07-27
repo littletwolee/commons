@@ -405,6 +405,13 @@ func (*es) Search(must, mustNot, should map[string]interface{}, sort map[string]
 			bq = bq.Must(rq)
 		}
 	}
+	if sizeStr != "" {
+		size, err = strconv.Atoi(sizeStr)
+		if err != nil {
+			return nil, err
+		}
+		ess = ess.Size(size)
+	}
 	result, err = ess.Query(bq).Do(ctx)
 	if err != nil {
 		return nil, err
