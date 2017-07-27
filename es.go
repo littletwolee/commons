@@ -463,7 +463,7 @@ func (*es) AssociativeSearch(regexp map[string]string, postFilter map[string]int
 	ess = slave.Search(index).Type(_type)
 	if regexp != nil {
 		for k, v := range regexp {
-			ess = ess.Query(elastic.NewRegexpQuery(k, v))
+			ess = ess.Query(elastic.NewMatchQuery(k, v))
 		}
 	}
 	if postFilter != nil {
