@@ -440,6 +440,55 @@ func (*es) Search(must, mustNot, should map[string]interface{}, sort map[string]
 	return byteResult, nil
 }
 
+// @Title SuggestSearch
+// @Description Suggest Search
+// @Parameters
+//            suggest          string                       suggest key word
+//            index            string                       es index
+//            _type            string                       es type
+//            sizeStr          string                       size
+// @Returns result:[]byte err:error
+func (*es) SuggestSearch(suggest string, index, _type string, sizeStr string) ([]byte, error) {
+	var (
+		list       []interface{}
+		ess        *elastic.SearchService
+		result     *elastic.SearchResult
+		err        error
+		object     interface{}
+		byteResult []byte
+		size       int
+	)
+	ess = slave.Search(index).Type(_type).Suggester(elastic.NewCompletionSuggester(suggest))
+	if sizeStr != "" {
+		size, err = strconv.Atoi(sizeStr)
+		if err == nil {
+			ess = ess.Size(size)
+		}
+	}
+	result, err = ess.Do(ctx)
+	if err != nil {
+		return nil, err
+	}
+	list = []interface{}{}
+	if result != nil && result.Hits.TotalHits > 0 {
+		for _, hit := range result.Hits.Hits {
+
+			err := json.Unmarshal(*hit.Source, &object)
+			if err != nil {
+				return nil, err
+			}
+			list = append(list, object)
+		}
+	} else {
+		return nil, nil
+	}
+	byteResult, err = json.Marshal(list)
+	if err != nil {
+		return nil, err
+	}
+	return byteResult, nil
+}
+
 // @Title AssociativeSearch
 // @Description Associative Search
 // @Parameters
