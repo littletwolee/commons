@@ -25,7 +25,9 @@ type es struct{}
 type RangeQuery struct {
 	Field string
 	Gte   interface{}
+	Gt    interface{}
 	Lte   interface{}
+	Lt    interface{}
 }
 
 func GetES() *es {
@@ -181,10 +183,16 @@ func (*es) FuzzyScroll(must, mustNot, should map[string]interface{}, sort map[st
 			for _, v := range ranges {
 				rq = elastic.NewRangeQuery(v.Field)
 				if v.Gte != nil {
-					rq = rq.Gt(v.Gte)
+					rq = rq.Gte(v.Gte)
+				}
+				if v.Gt != nil {
+					rq = rq.Gt(v.Gt)
 				}
 				if v.Lte != nil {
-					rq = rq.Lt(v.Lte)
+					rq = rq.Lte(v.Lte)
+				}
+				if v.Lt != nil {
+					rq = rq.Lt(v.Lt)
 				}
 				bq = bq.Must(rq)
 			}
