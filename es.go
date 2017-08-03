@@ -291,10 +291,16 @@ func (*es) FuzzySearch(must, mustNot, should map[string]interface{}, ranges []*R
 		for _, v := range ranges {
 			rq = elastic.NewRangeQuery(v.Field)
 			if v.Gte != nil {
-				rq = rq.Gt(v.Gte)
+				rq = rq.Gte(v.Gte)
+			}
+			if v.Gt != nil {
+				rq = rq.Gt(v.Gt)
 			}
 			if v.Lte != nil {
-				rq = rq.Lt(v.Lte)
+				rq = rq.Lte(v.Lte)
+			}
+			if v.Lt != nil {
+				rq = rq.Lt(v.Lt)
 			}
 			bq = bq.Must(rq)
 		}
@@ -406,10 +412,16 @@ func (*es) Search(must, mustNot, should map[string]interface{}, sort map[string]
 		for _, v := range ranges {
 			rq = elastic.NewRangeQuery(v.Field)
 			if v.Gte != nil {
-				rq = rq.Gt(v.Gte)
+				rq = rq.Gte(v.Gte)
+			}
+			if v.Gt != nil {
+				rq = rq.Gt(v.Gt)
 			}
 			if v.Lte != nil {
-				rq = rq.Lt(v.Lte)
+				rq = rq.Lte(v.Lte)
+			}
+			if v.Lt != nil {
+				rq = rq.Lt(v.Lt)
 			}
 			bq = bq.Must(rq)
 		}
@@ -543,6 +555,7 @@ func (*es) AssociativeSearch(regexp map[string]string, postFilter map[string]int
 			ess = ess.Size(size)
 		}
 	}
+	//ess = ess.Source([]string{"nickname", "usertype"})
 	result, err = ess.Do(ctx)
 	if err != nil {
 		return nil, err
