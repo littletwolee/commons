@@ -52,7 +52,7 @@ func initClient(address string) *elastic.Client {
 		elastic.SetSniff(false),
 	)
 	if err != nil {
-		GetLogger().LogPanic(err)
+		GetLogger().LogErr(err)
 	}
 	_, _, err = client.Ping(address).Do(ctx)
 	if err != nil {
