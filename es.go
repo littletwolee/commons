@@ -589,7 +589,7 @@ func (*es) AssociativeSearch(regexp map[string]string, postFilter map[string]int
 //            id               string                       es _id
 // @Returns err:error
 func (*es) Update(object map[string]interface{}, index, _type, id string) error {
-	_, err := master.Update().
+	res, err := master.Update().
 		Index(index).
 		Type(_type).
 		Id(id).
@@ -598,6 +598,7 @@ func (*es) Update(object map[string]interface{}, index, _type, id string) error 
 		Refresh("true").
 		Do(ctx)
 	if err != nil {
+		fmt.Println(res.Result)
 		return err
 	}
 	return nil
