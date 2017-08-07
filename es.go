@@ -593,7 +593,7 @@ func (*es) Update(object map[string]interface{}, index, _type, id string) error 
 		Index(index).
 		Type(_type).
 		Id(id).
-		Doc(object).
+		Upsert(object).
 		Refresh("true").
 		Do(ctx)
 	if err != nil {
