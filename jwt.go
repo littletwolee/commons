@@ -8,25 +8,19 @@ import (
 )
 
 var (
-	consJwt *Jwt
+	consJwt *jwt
 )
 
-type Jwt struct {
+type jwt struct {
 	HmacSampleSecret []byte
 }
 
-func GetJwt() *Jwt {
+func GetJwt() *jwt {
 	if consJwt == nil {
-		consJwt = &Jwt{}
+		consJwt = &jwt{}
 	}
-	consLogger := GetLogger()
-	keyPath := Config.GetString("jwt.path")
-	consFile := GetFile()
-	keyData, err := consFile.ReadFile(keyPath)
-	if err != nil {
-		consLogger.LogPanic(err)
-	}
-	consJwt.HmacSampleSecret = keyData
+	jwtKey := Config.GetString("jwt.jwtkey")
+	consJwt.HmacSampleSecret = []byte(jwtKey)
 	return consJwt
 }
 
@@ -49,7 +43,7 @@ func getHmacMethod(method string) lib.SigningMethod {
 //            method          string                          method
 //            mapClaims       map[string]interface{}          a struct by map
 // @Returns jwttoken:string err:error
-func (j *Jwt) NewHmac(method string, mapClaims map[string]interface{}) (string, error) {
+func (j *jwt) NewHmac(method string, mapClaims map[string]interface{}) (string, error) {
 	var (
 		token         *lib.Token
 		tokenString   string
@@ -74,7 +68,7 @@ RETURN:
 //            tokenString     string                          token string
 //            mapClaims       map[string]interface{}          a struct by map
 // @Returns mapClaims:map[string]interface{} err:error
-func (j *Jwt) ParseHmac(tokenString string, mapClaims map[string]interface{}) (map[string]interface{}, error) {
+func (j *jwt) ParseHmac(tokenString string, mapClaims map[string]interface{}) (map[string]interface{}, error) {
 	var (
 		claims map[string]interface{}
 		err    error
