@@ -161,21 +161,21 @@ func (*es) FuzzyScroll(must, mustNot, should map[string]interface{}, sort map[st
 		if must != nil {
 			qlist = []elastic.Query{}
 			for k, v := range must {
-				qlist = append(qlist, elastic.NewMatchQuery(k, v))
+				qlist = append(qlist, elastic.NewMatchQuery(k, v).Fuzziness("AUTO").Operator("AND"))
 			}
 			bq = bq.Must(qlist...)
 		}
 		if mustNot != nil {
 			qlist = []elastic.Query{}
 			for k, v := range mustNot {
-				qlist = append(qlist, elastic.NewMatchQuery(k, v))
+				qlist = append(qlist, elastic.NewMatchQuery(k, v).Fuzziness("AUTO").Operator("AND"))
 			}
 			bq = bq.MustNot(qlist...)
 		}
 		if should != nil {
 			qlist = []elastic.Query{}
 			for k, v := range should {
-				qlist = append(qlist, elastic.NewMatchQuery(k, v))
+				qlist = append(qlist, elastic.NewMatchQuery(k, v).Fuzziness("AUTO").Operator("AND"))
 			}
 			bq = bq.Should(qlist...)
 		}
