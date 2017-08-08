@@ -269,14 +269,14 @@ func (*es) FuzzySearch(must, mustNot, should map[string]interface{}, ranges []*R
 	if must != nil {
 		qlist = []elastic.Query{}
 		for k, v := range must {
-			qlist = append(qlist, elastic.NewMatchPhrasePrefixQuery(k, v).Fuzziness("AUTO").Operator("AND"))
+			qlist = append(qlist, elastic.NewMatchPhrasePrefixQuery(k, v))
 		}
 		bq = bq.Must(qlist...)
 	}
 	if mustNot != nil {
 		qlist = []elastic.Query{}
 		for k, v := range mustNot {
-			qlist = append(qlist, elastic.NewMatchPhrasePrefixQuery(k, v).Fuzziness("AUTO").Operator("AND"))
+			qlist = append(qlist, elastic.NewMatchPhrasePrefixQuery(k, v))
 		}
 		bq = bq.MustNot(qlist...)
 	}
@@ -381,21 +381,21 @@ func (*es) Search(must, mustNot, should map[string]interface{}, sort map[string]
 	if must != nil {
 		mlist = []elastic.Query{}
 		for k, v := range must {
-			mlist = append(mlist, elastic.NewMatchQuery(k, v).Fuzziness("AUTO").Operator("AND"))
+			mlist = append(mlist, elastic.NewMatchQuery(k, v))
 		}
 		bq = bq.Must(mlist...)
 	}
 	if should != nil {
 		slist = []elastic.Query{}
 		for k, v := range should {
-			slist = append(slist, elastic.NewMatchQuery(k, v).Fuzziness("AUTO").Operator("AND"))
+			slist = append(slist, elastic.NewMatchQuery(k, v))
 		}
 		bq = bq.Should(slist...)
 	}
 	if mustNot != nil {
 		nmlist = []elastic.Query{}
 		for k, v := range mustNot {
-			nmlist = append(nmlist, elastic.NewMatchQuery(k, v).Fuzziness("AUTO").Operator("AND"))
+			nmlist = append(nmlist, elastic.NewMatchQuery(k, v))
 		}
 		bq = bq.MustNot(nmlist...)
 	}
