@@ -159,23 +159,38 @@ func (*es) FuzzyScroll(must, mustNot, should map[string]interface{}, sort map[st
 	if scrollID == "" {
 		bq = elastic.NewBoolQuery()
 		if must != nil {
+			flag := false
 			qlist = []elastic.Query{}
 			for k, v := range must {
-				qlist = append(qlist, elastic.NewMatchQuery(k, v).Fuzziness("AUTO").Operator("AND"))
+				if flag {
+					qlist = append(qlist, elastic.NewMatchQuery(k, v).Fuzziness("AUTO").Operator("AND"))
+					continue
+				}
+				qlist = append(qlist, elastic.NewMatchQuery(k, v))
 			}
 			bq = bq.Must(qlist...)
 		}
 		if mustNot != nil {
+			flag := false
 			qlist = []elastic.Query{}
 			for k, v := range mustNot {
-				qlist = append(qlist, elastic.NewMatchQuery(k, v).Fuzziness("AUTO").Operator("AND"))
+				if flag {
+					qlist = append(qlist, elastic.NewMatchQuery(k, v).Fuzziness("AUTO").Operator("AND"))
+					continue
+				}
+				qlist = append(qlist, elastic.NewMatchQuery(k, v))
 			}
 			bq = bq.MustNot(qlist...)
 		}
 		if should != nil {
+			flag := false
 			qlist = []elastic.Query{}
 			for k, v := range should {
-				qlist = append(qlist, elastic.NewMatchQuery(k, v).Fuzziness("AUTO").Operator("AND"))
+				if flag {
+					qlist = append(qlist, elastic.NewMatchQuery(k, v).Fuzziness("AUTO").Operator("AND"))
+					continue
+				}
+				qlist = append(qlist, elastic.NewMatchQuery(k, v))
 			}
 			bq = bq.Should(qlist...)
 		}
