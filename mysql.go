@@ -241,6 +241,41 @@ func (m *mysqlHelper) Update(sqlRule *SQLRule, u map[string]interface{}) error {
 	return nil
 }
 
+// @Title Update
+// @Description update model by parameters
+// @Parameters
+//       sqlRule         *SQLRule                   sqlrule
+//       u               map[string]interface{}     modify
+// @Returns err:error
+func (m *mysqlHelper) Upsert(sqlRule *SQLRule, model interface{}) error {
+	var (
+		err    error
+		gormdb *gorm.DB
+	)
+	gormdb, err = setUpGormDB(sqlRule)
+	if err != nil {
+		return err
+	}
+	err = checkWhere(sqlRule.Where)
+	if err != nil {
+		return err
+	}
+	var result []interface{}
+	err = m.FindOne(sqlRule, &result)
+	if err != nil {
+		return err
+	}
+	if len(result) <= 0 {
+		err = m.Insert(sqlRule, model)
+	} else {
+		err = gormdb.Where(sqlRule.Where.Sentence, sqlRule.Where.Parameters...).Updates(model).Error
+	}
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // @Title Delete
 // @Description delete model by model
 // @Parameters
