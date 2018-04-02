@@ -68,7 +68,7 @@ RETURN:
 //            tokenString     string                          token string
 //            mapClaims       map[string]interface{}          a struct by map
 // @Returns mapClaims:map[string]interface{} err:error
-func (j *jwt) ParseHmac(tokenString string, mapClaims map[string]interface{}) (map[string]interface{}, error) {
+func (j *jwt) ParseHmac(tokenString string) (map[string]interface{}, error) {
 	var (
 		claims map[string]interface{}
 		err    error
