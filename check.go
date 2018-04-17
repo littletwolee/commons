@@ -18,7 +18,7 @@ type check struct {
 func GetCheck() *check {
 	if consCheck == nil {
 		consCheck = &check{
-			CheckList: Config.GetString("check.sqlinjection"),
+			CheckList: GetConfig().GetString("check.sqlinjection"),
 		}
 		if consCheck.CheckList == "" {
 			consCheck.CheckList = defaultCheckList

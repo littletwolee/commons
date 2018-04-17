@@ -4,13 +4,16 @@ import (
 	"github.com/spf13/viper"
 )
 
-var Config *viper.Viper
+var config *viper.Viper
 
-func init() {
-	Config = viper.New()
-	Config.SetConfigName("app")
-	Config.AddConfigPath("config/")
-	if err := Config.ReadInConfig(); err != nil {
-		panic(err)
+func GetConfig() *viper.Viper {
+	if config == nil {
+		config = viper.New()
+		config.SetConfigName("app")
+		config.AddConfigPath("config/")
+		if err := config.ReadInConfig(); err != nil {
+			panic(err)
+		}
 	}
+	return config
 }

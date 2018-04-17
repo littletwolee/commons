@@ -35,26 +35,26 @@ func GetCSession() *CSession {
 	if consCSession == nil {
 		consCSession = &CSession{}
 	}
-	DefaultKey = Config.GetString("session.keypaire")
-	consCSession.Name = Config.GetString("session.name")
-	maxAgeStr := Config.GetString("session.maxage")
+	DefaultKey = GetConfig().GetString("session.keypaire")
+	consCSession.Name = GetConfig().GetString("session.name")
+	maxAgeStr := GetConfig().GetString("session.maxage")
 	consCSession.maxAge, err = strconv.Atoi(maxAgeStr)
 	if err != nil {
 		GetLogger().LogErr(err)
 	}
-	address = Config.GetString("redis.address")
-	password = Config.GetString("redis.password")
-	maxIdleStr := Config.GetString("redis.maxidle")
+	address = GetConfig().GetString("redis.address")
+	password = GetConfig().GetString("redis.password")
+	maxIdleStr := GetConfig().GetString("redis.maxidle")
 	maxIdle, err = strconv.Atoi(maxIdleStr)
 	if err != nil {
 		GetLogger().LogErr(err)
 	}
-	maxActiveStr := Config.GetString("redis.maxactive")
+	maxActiveStr := GetConfig().GetString("redis.maxactive")
 	maxActive, err = strconv.Atoi(maxActiveStr)
 	if err != nil {
 		GetLogger().LogErr(err)
 	}
-	idleTimeoutStr := Config.GetString("redis.idletimeout")
+	idleTimeoutStr := GetConfig().GetString("redis.idletimeout")
 	idleTimeout, err = strconv.Atoi(idleTimeoutStr)
 	if err != nil {
 		GetLogger().LogErr(err)
@@ -102,7 +102,7 @@ func (r *CSession) NewStore() (sessions.RedisStore, error) {
 	if r.Store != nil {
 		return r.Store, nil
 	}
-	kp := Config.GetString("session.keypaire")
+	kp := GetConfig().GetString("session.keypaire")
 	store, err := sessions.NewRediStoreWithPool(newPool(), []byte(kp))
 	if err != nil {
 		return nil, err

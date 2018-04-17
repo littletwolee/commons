@@ -34,9 +34,9 @@ func GetES() *es {
 	if esHelper == nil {
 		esHelper = &es{}
 	}
-	masterAddress := Config.GetString("es.master")
-	slaveAddress := Config.GetString("es.slave")
-	scrollKeep = Config.GetString("es.scrollKeep")
+	masterAddress := GetConfig().GetString("es.master")
+	slaveAddress := GetConfig().GetString("es.slave")
+	scrollKeep = GetConfig().GetString("es.scrollKeep")
 	master = initClient(masterAddress)
 	slave = initClient(slaveAddress)
 	return esHelper

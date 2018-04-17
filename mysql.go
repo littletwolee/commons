@@ -53,7 +53,7 @@ func GetMysqlHelper() *mysqlHelper {
 	return consMysqlHelper
 }
 
-// type mysqlConfig struct {
+// type mysqlGetConfig() struct {
 // 	Master, Slave, DataBase, UserName, PassWord string
 // }
 
@@ -66,12 +66,12 @@ func (m *mysqlHelper) MysqlInit() {
 		err               error
 		masterDB, slaveDB *gorm.DB
 	)
-	master := Config.GetString("mysql.master")
-	slave := Config.GetString("mysql.slave")
-	dataBase := Config.GetString("mysql.database")
-	userName := Config.GetString("mysql.username")
-	passWord := Config.GetString("mysql.password")
-	isDebugStr := Config.GetString("mysql.isdebug")
+	master := GetConfig().GetString("mysql.master")
+	slave := GetConfig().GetString("mysql.slave")
+	dataBase := GetConfig().GetString("mysql.database")
+	userName := GetConfig().GetString("mysql.username")
+	passWord := GetConfig().GetString("mysql.password")
+	isDebugStr := GetConfig().GetString("mysql.isdebug")
 	isDbug, err = strconv.ParseBool(isDebugStr)
 	if err != nil {
 		isDbug = true
@@ -89,7 +89,7 @@ func (m *mysqlHelper) MysqlInit() {
 }
 
 // @Title getDB
-// @Description get *sql.DB by config
+// @Description get *sql.DB by GetConfig()
 // @Parameters
 //       address         string          host:ip
 //       username        string          db username

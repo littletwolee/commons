@@ -31,7 +31,7 @@ func GetLogger() *Log {
 		return consLogger
 	}
 	consLogger = &Log{}
-	logPath := Config.GetString("logs.path")
+	logPath := GetConfig().GetString("logs.path")
 	logPath, err := consFile.FormatPath(logPath)
 	if err != nil {
 		logrus.Panic(err)

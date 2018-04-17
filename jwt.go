@@ -19,7 +19,7 @@ func GetJwt() *jwt {
 	if consJwt == nil {
 		consJwt = &jwt{}
 	}
-	jwtKey := Config.GetString("jwt.jwtkey")
+	jwtKey := GetConfig().GetString("jwt.jwtkey")
 	consJwt.HmacSampleSecret = []byte(jwtKey)
 	return consJwt
 }
