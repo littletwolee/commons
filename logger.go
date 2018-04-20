@@ -26,12 +26,17 @@ type logger struct {
 	Path    string
 }
 
-func GetLogger() *Log {
+func GetLogger(path ...string) *Log {
 	if consLogger != nil {
 		return consLogger
 	}
 	consLogger = &Log{}
-	logPath := GetConfig().GetString("logs.path")
+	logPath := ""
+	if len(path) > 0 {
+		logPath = path[0]
+	} else {
+		logPath = GetConfig().GetString("logs.path")
+	}
 	logPath, err := consFile.FormatPath(logPath)
 	if err != nil {
 		logrus.Panic(err)
