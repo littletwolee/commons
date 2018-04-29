@@ -98,7 +98,13 @@ func (l *Log) LogErr(errin error) {
 		}
 		defer file.Close()
 		l.ErrLog.Log.Out = file
-		l.ErrLog.Log.Error(errin)
+		pc, fileName, line, _ := runtime.Caller(1)
+		funcName := runtime.FuncForPC(pc).Name()
+		l.ErrLog.Log.WithFields(logrus.Fields{
+			"file": fileName,
+			"func": funcName[:len(funcName)-2],
+			"line": line,
+		}).Error(errin)
 	}
 }
 
@@ -132,9 +138,10 @@ func (l *Log) LogPanic(errin error) {
 		}
 		defer file.Close()
 		l.PanicLog.Log.Out = file
-		pc, _, line, _ := runtime.Caller(1)
+		pc, fileName, line, _ := runtime.Caller(1)
 		funcName := runtime.FuncForPC(pc).Name()
 		l.PanicLog.Log.WithFields(logrus.Fields{
+			"file": fileName,
 			"func": funcName[:len(funcName)-2],
 			"line": line,
 		}).Panic(errin)
@@ -147,7 +154,12 @@ func (l *Log) LogPanic(errin error) {
 //             errin            error          error
 func (l *Log) OutErr(errin error) {
 	if errin != nil {
-		l.ErrLog.Log.Error(errin)
+		pc, fileName, line, _ := runtime.Caller(1)
+		funcName := runtime.FuncForPC(pc).Name()
+		l.MsgLog.Log.WithFields(logrus.Fields{
+			"file": fileName,
+			"func": funcName[:len(funcName)-2],
+			"line": line}).Error(errin)
 	}
 }
 
@@ -165,9 +177,10 @@ func (l *Log) OutMsg(msg string) {
 //            errin            error          error
 func (l *Log) OutPanic(errin error) {
 	if errin != nil {
-		pc, _, line, _ := runtime.Caller(1)
+		pc, fileName, line, _ := runtime.Caller(1)
 		funcName := runtime.FuncForPC(pc).Name()
 		l.PanicLog.Log.WithFields(logrus.Fields{
+			"file": fileName,
 			"func": funcName[:len(funcName)-2],
 			"line": line,
 		}).Panic(errin)
