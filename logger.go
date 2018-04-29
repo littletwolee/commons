@@ -147,7 +147,7 @@ func (l *Log) LogPanic(errin error) {
 //             errin            error          error
 func (l *Log) OutErr(errin error) {
 	if errin != nil {
-		l.ErrLog.Log.Info(errin)
+		l.ErrLog.Log.Error(errin)
 	}
 }
 
