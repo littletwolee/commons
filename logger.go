@@ -5,6 +5,7 @@ import (
 	"os"
 	"runtime"
 	"sync"
+	"time"
 
 	"github.com/sirupsen/logrus"
 )
@@ -101,6 +102,7 @@ func (l *Log) LogErr(errin error) {
 		pc, fileName, line, _ := runtime.Caller(1)
 		funcName := runtime.FuncForPC(pc).Name()
 		l.ErrLog.Log.WithFields(logrus.Fields{
+			"time": time.Now().Format("2006-01-02T15:04:05Z"),
 			"file": fileName,
 			"func": funcName[:len(funcName)-2],
 			"line": line,
@@ -121,7 +123,7 @@ func (l *Log) LogMsg(msg string) {
 	}
 	defer file.Close()
 	l.MsgLog.Log.Out = file
-	l.MsgLog.Log.Info(msg)
+	l.MsgLog.Log.WithField("time", time.Now().Format("2006-01-02T15:04:05Z")).Info(msg)
 }
 
 // @Title LogPanic
@@ -141,6 +143,7 @@ func (l *Log) LogPanic(errin error) {
 		pc, fileName, line, _ := runtime.Caller(1)
 		funcName := runtime.FuncForPC(pc).Name()
 		l.PanicLog.Log.WithFields(logrus.Fields{
+			"time": time.Now().Format("2006-01-02T15:04:05Z"),
 			"file": fileName,
 			"func": funcName[:len(funcName)-2],
 			"line": line,
@@ -157,6 +160,7 @@ func (l *Log) OutErr(errin error) {
 		pc, fileName, line, _ := runtime.Caller(1)
 		funcName := runtime.FuncForPC(pc).Name()
 		l.MsgLog.Log.WithFields(logrus.Fields{
+			"time": time.Now().Format("2006-01-02T15:04:05Z"),
 			"file": fileName,
 			"func": funcName[:len(funcName)-2],
 			"line": line}).Error(errin)
@@ -168,7 +172,7 @@ func (l *Log) OutErr(errin error) {
 // @Parameters
 //            msg            string          msg
 func (l *Log) OutMsg(msg string) {
-	l.MsgLog.Log.Info(msg)
+	l.MsgLog.Log.WithField("time", time.Now().Format("2006-01-02T15:04:05Z")).Info(msg)
 }
 
 // @Title OutPanic
@@ -180,6 +184,7 @@ func (l *Log) OutPanic(errin error) {
 		pc, fileName, line, _ := runtime.Caller(1)
 		funcName := runtime.FuncForPC(pc).Name()
 		l.PanicLog.Log.WithFields(logrus.Fields{
+			"time": time.Now().Format("2006-01-02T15:04:05Z"),
 			"file": fileName,
 			"func": funcName[:len(funcName)-2],
 			"line": line,
