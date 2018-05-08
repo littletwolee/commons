@@ -78,12 +78,12 @@ func (m *mysqlHelper) MysqlInit() {
 	}
 	masterDB, err = getDB(master, userName, passWord, dataBase)
 	if err != nil {
-		GetLogger().LogPanic(err)
+		GetLogger().OutErr(err)
 	}
 	m.MasterDB = masterDB
 	slaveDB, err = getDB(slave, userName, passWord, dataBase)
 	if err != nil {
-		GetLogger().LogPanic(err)
+		GetLogger().OutErr(err)
 	}
 	m.SlaveDb = slaveDB
 }
