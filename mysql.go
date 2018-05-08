@@ -322,6 +322,10 @@ func setUpGormDB(sqlRule *SQLRule) (*gorm.DB, error) {
 		err = errors.New("table is empty")
 		goto ERR
 	}
+	if GetMysqlHelper().SlaveDb == nil {
+		consMysqlHelper = nil
+		return nil, errors.New("connection refused")
+	}
 	gormdb = GetMysqlHelper().SlaveDb.Table(sqlRule.Table)
 	if isDbug {
 		gormdb = gormdb.Debug()
