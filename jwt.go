@@ -3,6 +3,7 @@ package commons
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	lib "github.com/dgrijalva/jwt-go"
 )
@@ -81,7 +82,7 @@ func (j *jwt) ParseHmac(tokenString string) (map[string]interface{}, error) {
 		}
 		return j.HmacSampleSecret, nil
 	})
-	if claims, ok = token.Claims.(lib.MapClaims); ok && token.Valid {
+	if claims, ok = token.Claims.(lib.MapClaims); ok && token.Valid && beforeExp(claims["exp"].(string)) {
 		goto RETURN
 	} else {
 		err = errors.New("Can't parse token")
@@ -89,4 +90,12 @@ func (j *jwt) ParseHmac(tokenString string) (map[string]interface{}, error) {
 	}
 RETURN:
 	return claims, err
+}
+func beforeExp(t string) bool {
+	tExp, err := time.Parse(time.RFC3339, t)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	return time.Now().Before(tExp)
 }
