@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"time"
 
-	redigo "github.com/garyburd/redigo/redis"
 	"github.com/gin-gonic/gin"
+	redigo "github.com/gomodule/redigo/redis"
 	"github.com/gorilla/context"
 	sessions "github.com/littletwolee/gin-sessions"
 )
