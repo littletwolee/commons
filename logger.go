@@ -11,183 +11,156 @@ import (
 )
 
 var (
-	m          *sync.RWMutex
-	consLogger *Log
+	m sync.Mutex
+	c *console
+	l *log
 )
 
-type Log struct {
-	ErrLog   *logger
-	MsgLog   *logger
-	PanicLog *logger
-}
+const (
+	timeFormat string = "2006-01-02T15:04:05Z"
+	fieldTime  string = "time"
+	fieldFile  string = "file"
+	fieldFunc  string = "func"
+	fieldLine  string = "line"
+)
 
 type logger struct {
-	RWMutex *sync.RWMutex
-	Log     *logrus.Logger
-	Path    string
+	e, i, p *logrus.Logger
 }
 
-func GetLogger(path ...string) *Log {
-	if consLogger != nil {
-		return consLogger
-	}
-	consLogger = &Log{}
-	logPath := ""
-	if len(path) > 0 {
-		logPath = path[0]
-	} else {
-		logPath = GetConfig().GetString("logs.path")
-	}
-	logPath, err := consFile.FormatPath(logPath)
-	if err != nil {
-		logrus.Panic(err)
-	}
-	err = consFile.PathExists(logPath, true)
-	if err != nil {
-		logrus.Panic(err)
-	}
-	consLogger.ErrLog = consLogger.getNew("error", logPath)
-	consLogger.MsgLog = consLogger.getNew("info", logPath)
-	consLogger.PanicLog = consLogger.getNew("panic", logPath)
-	return consLogger
+type ilogger interface {
+	// &logger{}
+	Error(format string, a ...interface{})
+	Info(format string, a ...interface{})
+	Panic(format string, a ...interface{})
+	init()
 }
 
-// @Title getNew
-// @Description get new logger point
-// @Parameters
-//            loglevel         string           log level
-//            logPath          string           log path
-// @Returns logger point:*logrus.Logger
-func (l *Log) getNew(logLevel, logPath string) *logger {
-	var (
-		log      *logger
-		err      error
-		consFile *File
-	)
-	consFile = GetFile()
-	logPath, err = consFile.FormatPath(logPath)
-	if err != nil {
-		logrus.Error(err)
-	}
-	log = &logger{
-		RWMutex: new(sync.RWMutex),
-		Log:     logrus.New(),
-		Path:    fmt.Sprintf("%s%s.log", logPath, logLevel),
-	}
-	log.Log.Formatter = new(logrus.TextFormatter)
+func (l *logger) Error(format string, a ...interface{}) {
+	pc, fileName, line, _ := runtime.Caller(1)
+	funcName := runtime.FuncForPC(pc).Name()
+	l.e.WithFields(logrus.Fields{
+		//fieldTime: time.Now().Format(timeFormat),
+		fieldFile: fileName,
+		fieldFunc: funcName[:len(funcName)-2],
+		fieldLine: line}).Errorf(format, a...)
+}
+
+func (l *logger) Info(format string, a ...interface{}) {
+	l.i.WithField(fieldTime,
+		time.Now().Format(timeFormat)).Infof(format, a...)
+}
+
+func (l *logger) Panic(format string, a ...interface{}) {
+	pc, fileName, line, _ := runtime.Caller(1)
+	funcName := runtime.FuncForPC(pc).Name()
+	l.p.WithFields(logrus.Fields{
+		fieldTime: time.Now().Format(timeFormat),
+		fieldFile: fileName,
+		fieldFunc: funcName[:len(funcName)-2],
+		fieldLine: line}).Panicf(format, a...)
+}
+
+func (l *logger) getLogger() {
+	l.e = l.getNew("error")
+	l.i = l.getNew("info")
+	l.p = l.getNew("panic")
+}
+
+func (l *logger) getNew(logLevel string) *logrus.Logger {
+	log := logrus.New()
+	log.Formatter = &logrus.TextFormatter{
+		ForceColors:            false,
+		DisableColors:          false,
+		FullTimestamp:          true,
+		DisableSorting:         false,
+		DisableLevelTruncation: true,
+		QuoteEmptyFields:       false}
 	level, err := logrus.ParseLevel(logLevel)
 	if err != nil {
 		logrus.Error(ERROR_PARSE)
 	}
-	log.Log.Level = level
-	goto RETURN
-RETURN:
+	log.Level = level
 	return log
 }
 
-// @Title LogErr
-// @Description log error
-// @Parameters
-//             errin            error          error
-func (l *Log) LogErr(errin error) {
-	if errin != nil {
-		l.ErrLog.RWMutex.Lock()
-		defer l.ErrLog.RWMutex.Unlock()
-		file, err := consFile.OpenFile(l.ErrLog.Path, os.O_CREATE|os.O_APPEND|os.O_WRONLY)
-		if err != nil {
-			logrus.Error(err)
-		}
-		defer file.Close()
-		l.ErrLog.Log.Out = file
-		pc, fileName, line, _ := runtime.Caller(1)
-		funcName := runtime.FuncForPC(pc).Name()
-		l.ErrLog.Log.WithFields(logrus.Fields{
-			"time": time.Now().Format("2006-01-02T15:04:05Z"),
-			"file": fileName,
-			"func": funcName[:len(funcName)-2],
-			"line": line,
-		}).Error(errin)
-	}
+func Console() ilogger {
+	return _console()
 }
 
-// @Title LogMsg
-// @Description log msg
-// @Parameters
-//            msg            string          msg
-func (l *Log) LogMsg(msg string) {
-	l.MsgLog.RWMutex.Lock()
-	defer l.MsgLog.RWMutex.Unlock()
-	file, err := consFile.OpenFile(l.MsgLog.Path, os.O_CREATE|os.O_APPEND|os.O_WRONLY)
+type console struct {
+	logger
+}
+
+func _console() *console {
+	if c == nil {
+		m.Lock()
+		defer m.Unlock()
+		if c == nil {
+			c = &console{}
+			c.init()
+		}
+	}
+	return c
+}
+
+func (c *console) init() {
+	c.getLogger()
+}
+
+func Log(logPath string) ilogger {
+	return _log(logPath)
+}
+
+type log struct {
+	logger
+	m       sync.Mutex
+	logPath string
+}
+
+func _log(logPath string) *log {
+	if l == nil {
+		m.Lock()
+		defer m.Unlock()
+		if l == nil {
+			l = &log{logPath: logPath}
+			l.init()
+		}
+	}
+	return l
+}
+
+func (l *log) init() {
+	l.getLogger()
+}
+
+func (l *log) getFile(fileName string) *os.File {
+	consFile := GetFile()
+	logPath, err := consFile.FormatPath(l.logPath)
 	if err != nil {
 		logrus.Error(err)
 	}
-	defer file.Close()
-	l.MsgLog.Log.Out = file
-	l.MsgLog.Log.WithField("time", time.Now().Format("2006-01-02T15:04:05Z")).Info(msg)
-}
-
-// @Title LogPanic
-// @Description log panic
-// @Parameters
-//            msg            string          msg
-func (l *Log) LogPanic(errin error) {
-	if errin != nil {
-		l.PanicLog.RWMutex.Lock()
-		defer l.PanicLog.RWMutex.Unlock()
-		file, err := consFile.OpenFile(l.PanicLog.Path, os.O_CREATE|os.O_APPEND|os.O_WRONLY)
-		if err != nil {
-			logrus.Error(err)
-		}
-		defer file.Close()
-		l.PanicLog.Log.Out = file
-		pc, fileName, line, _ := runtime.Caller(1)
-		funcName := runtime.FuncForPC(pc).Name()
-		l.PanicLog.Log.WithFields(logrus.Fields{
-			"time": time.Now().Format("2006-01-02T15:04:05Z"),
-			"file": fileName,
-			"func": funcName[:len(funcName)-2],
-			"line": line,
-		}).Panic(errin)
+	file, err := consFile.OpenFile(fmt.Sprintf("%s%s.log", logPath, fileName), os.O_CREATE|os.O_APPEND|os.O_WRONLY)
+	if err != nil {
+		logrus.Error(err)
 	}
+	return file
 }
 
-// @Title OutErr
-// @Description out put error
-// @Parameters
-//             errin            error          error
-func (l *Log) OutErr(errin error) {
-	if errin != nil {
-		pc, fileName, line, _ := runtime.Caller(1)
-		funcName := runtime.FuncForPC(pc).Name()
-		l.MsgLog.Log.WithFields(logrus.Fields{
-			"time": time.Now().Format("2006-01-02T15:04:05Z"),
-			"file": fileName,
-			"func": funcName[:len(funcName)-2],
-			"line": line}).Error(errin)
-	}
+func (l *log) Error(format string, a ...interface{}) {
+	file := l.getFile(l.logger.e.Level.String())
+	l.e.Out = file
+	l.logger.Error(format, a)
 }
 
-// @Title OutMsg
-// @Description out put msg
-// @Parameters
-//            msg            string          msg
-func (l *Log) OutMsg(msg string) {
-	l.MsgLog.Log.WithField("time", time.Now().Format("2006-01-02T15:04:05Z")).Info(msg)
+func (l *log) Info(format string, a ...interface{}) {
+	file := l.getFile(l.logger.i.Level.String())
+	l.e.Out = file
+	l.logger.Info(format, a...)
 }
 
-// @Title OutPanic
-// @Description out put panic
-// @Parameters
-//            errin            error          error
-func (l *Log) OutPanic(errin error) {
-	if errin != nil {
-		pc, fileName, line, _ := runtime.Caller(1)
-		funcName := runtime.FuncForPC(pc).Name()
-		l.PanicLog.Log.WithFields(logrus.Fields{
-			"time": time.Now().Format("2006-01-02T15:04:05Z"),
-			"file": fileName,
-			"func": funcName[:len(funcName)-2],
-			"line": line,
-		}).Panic(errin)
-	}
+func (l *log) Panic(format string, a ...interface{}) {
+	file := l.getFile(l.logger.p.Level.String())
+	l.e.Out = file
+	l.logger.Panic(format, a...)
 }
