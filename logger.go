@@ -5,7 +5,6 @@ import (
 	"os"
 	"runtime"
 	"sync"
-	"time"
 
 	"github.com/sirupsen/logrus"
 )
@@ -30,35 +29,41 @@ type logger struct {
 
 type ilogger interface {
 	// &logger{}
-	Error(format string, a ...interface{})
-	Info(format string, a ...interface{})
-	Panic(format string, a ...interface{})
+	Error(format interface{}, a ...interface{})
+	Info(format interface{}, a ...interface{})
+	Panic(format interface{}, a ...interface{})
 	init()
 }
 
-func (l *logger) Error(format string, a ...interface{}) {
+func (l *logger) field(format interface{}, a ...interface{}) *logrus.Entry {
+	pc, fileName, line, _ := runtime.Caller(1)
+	funcName := runtime.FuncForPC(pc).Name()
+	return l.e.WithFields(logrus.Fields{
+		fieldFile: fileName,
+		fieldFunc: funcName[:len(funcName)-2],
+		fieldLine: line})
+}
+
+func (l *logger) Error(format interface{}, a ...interface{}) {
 	pc, fileName, line, _ := runtime.Caller(1)
 	funcName := runtime.FuncForPC(pc).Name()
 	l.e.WithFields(logrus.Fields{
-		//fieldTime: time.Now().Format(timeFormat),
 		fieldFile: fileName,
 		fieldFunc: funcName[:len(funcName)-2],
-		fieldLine: line}).Errorf(format, a...)
+		fieldLine: line}).Errorf(fmt.Sprintln(format), a)
 }
 
-func (l *logger) Info(format string, a ...interface{}) {
-	l.i.WithField(fieldTime,
-		time.Now().Format(timeFormat)).Infof(format, a...)
+func (l *logger) Info(format interface{}, a ...interface{}) {
+	l.i.Infof(fmt.Sprint(format), a)
 }
 
-func (l *logger) Panic(format string, a ...interface{}) {
+func (l *logger) Panic(format interface{}, a ...interface{}) {
 	pc, fileName, line, _ := runtime.Caller(1)
 	funcName := runtime.FuncForPC(pc).Name()
 	l.p.WithFields(logrus.Fields{
-		fieldTime: time.Now().Format(timeFormat),
 		fieldFile: fileName,
 		fieldFunc: funcName[:len(funcName)-2],
-		fieldLine: line}).Panicf(format, a...)
+		fieldLine: line}).Panicf(fmt.Sprint(format), a)
 }
 
 func (l *logger) getLogger() {
@@ -147,20 +152,20 @@ func (l *log) getFile(fileName string) *os.File {
 	return file
 }
 
-func (l *log) Error(format string, a ...interface{}) {
+func (l *log) Error(format interface{}, a ...interface{}) {
 	file := l.getFile(l.logger.e.Level.String())
 	l.e.Out = file
 	l.logger.Error(format, a)
 }
 
-func (l *log) Info(format string, a ...interface{}) {
+func (l *log) Info(format interface{}, a ...interface{}) {
 	file := l.getFile(l.logger.i.Level.String())
 	l.e.Out = file
-	l.logger.Info(format, a...)
+	l.logger.Info(format, a)
 }
 
-func (l *log) Panic(format string, a ...interface{}) {
+func (l *log) Panic(format interface{}, a ...interface{}) {
 	file := l.getFile(l.logger.p.Level.String())
 	l.e.Out = file
-	l.logger.Panic(format, a...)
+	l.logger.Panic(format, a)
 }
