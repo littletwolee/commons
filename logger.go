@@ -28,11 +28,9 @@ const (
 
 type logger struct {
 	m map[string]*logrus.Logger
-	//e, i, p *logrus.Logger
 }
 
 type ilogger interface {
-	// &logger{}
 	Error(i interface{})
 	Info(i interface{})
 	Panic(i interface{})
