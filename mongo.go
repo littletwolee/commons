@@ -75,6 +75,7 @@ func (m *Mongo) mdc(dbName string, collection string, f func(*mgo.Collection) er
 func (m *Mongo) insert(dbName, collName string, i interface{}) error {
 	v := reflect.ValueOf(i).Elem()
 	v.FieldByName("ID").Set(reflect.ValueOf(bson.NewObjectId().String()))
+	v.FieldByName("CTime").Set(reflect.ValueOf(time.Now()))
 	return m.mdc(dbName, collName, func(coll *mgo.Collection) error {
 		err := coll.Insert(i)
 		return err
