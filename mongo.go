@@ -37,6 +37,7 @@ func NewMongo(ip, port, dataBase, user, pwd string, poolLimit int) *Mongo {
 	}
 	return mongo
 }
+
 func (m *Mongo) session() *mgo.Session {
 	if session == nil {
 		var err error
@@ -48,7 +49,24 @@ func (m *Mongo) session() *mgo.Session {
 	return session.Clone()
 }
 
-func (m *Mongo) mc(collection string, f func(*mgo.Collection) error) error {
+type ObjectID interface {
+	Hex() string
+}
+type objectID bson.ObjectId
+
+func (o *objectID) Hex() string {
+	return o.Hex()
+}
+
+func (m *Mongo) ObjectIDHex(id string) ObjectID {
+	return bson.ObjectIdHex(id)
+}
+
+func (m *Mongo) NewObjectID() ObjectID {
+	return bson.NewObjectId()
+}
+
+func (m *Mongo) mc(collection string, f func(*mgo.Collection) (string, error)) (string, error) {
 	session := m.session()
 	defer func() {
 		session.Close()
@@ -60,7 +78,7 @@ func (m *Mongo) mc(collection string, f func(*mgo.Collection) error) error {
 	return f(c)
 }
 
-func (m *Mongo) mdc(dbName string, collection string, f func(*mgo.Collection) error) error {
+func (m *Mongo) mdc(dbName string, collection string, f func(*mgo.Collection) (string, error)) (string, error) {
 	session := m.session()
 	defer func() {
 		session.Close()
@@ -72,52 +90,98 @@ func (m *Mongo) mdc(dbName string, collection string, f func(*mgo.Collection) er
 	return f(c)
 }
 
-func (m *Mongo) insert(dbName, collName string, i interface{}) error {
+func (m *Mongo) insert(dbName, collName string, i interface{}) (string, error) {
 	v := reflect.ValueOf(i).Elem()
-	v.FieldByName("ID").Set(reflect.ValueOf(bson.NewObjectId().String()))
+	id := v.FieldByName("ID")
+	newID := m.NewObjectID()
+	if id.IsNil() {
+		id.Set(reflect.ValueOf(newID))
+	}
 	v.FieldByName("CTime").Set(reflect.ValueOf(time.Now()))
-	return m.mdc(dbName, collName, func(coll *mgo.Collection) error {
-		err := coll.Insert(i)
-		return err
+	return m.mdc(dbName, collName, func(coll *mgo.Collection) (string, error) {
+		return newID.Hex(), coll.Insert(i)
 	})
 }
-func (m *Mongo) InsertDC(dbName, collName string, i interface{}) error {
+func (m *Mongo) InsertDC(dbName, collName string, i interface{}) (string, error) {
 	return m.insert(dbName, collName, i)
 }
-func (m *Mongo) InsertC(collName string, i interface{}) error {
+func (m *Mongo) InsertC(collName string, i interface{}) (string, error) {
 	return m.insert(m.info.Database, collName, i)
 }
 
-func (m *Mongo) view(dbName, collName string, query, result interface{}) error {
-	return m.mdc(dbName, collName, func(coll *mgo.Collection) error {
+func (m *Mongo) upsert(dbName, collName string, q map[string][]string, i interface{}) (string, error) {
+	v := reflect.ValueOf(i).Elem()
+	id := v.FieldByName("ID")
+	newID := m.NewObjectID()
+	if id.IsNil() {
+		id.Set(reflect.ValueOf(newID))
+	}
+	v.FieldByName("CTime").Set(reflect.ValueOf(time.Now()))
+	return m.mdc(dbName, collName, func(coll *mgo.Collection) (string, error) {
+		info, err := coll.Upsert(q, i)
+		if err != nil {
+			return "", err
+		}
+		if info != nil {
+			return info.UpsertedId.(bson.ObjectId).Hex(), nil
+		}
+		return "", nil
+	})
+}
+func (m *Mongo) UpdateDC(dbName, collName string, q, i map[string]interface{}) (string, error) {
+	return m.update(dbName, collName, q, i)
+}
+func (m *Mongo) UpdateC(collName string, q, i map[string]interface{}) (string, error) {
+	return m.update(m.info.Database, collName, q, i)
+}
+
+func (m *Mongo) update(dbName, collName string, q, i map[string]interface{}) (string, error) {
+	return m.mdc(dbName, collName, func(coll *mgo.Collection) (string, error) {
+		data := bson.M{"$set": i}
+		err := coll.Update(q, data)
+		if err != nil {
+			return "", err
+		}
+		return "", nil
+	})
+}
+func (m *Mongo) UpsertDC(dbName, collName string, q map[string][]string, i interface{}) (string, error) {
+	return m.upsert(dbName, collName, q, i)
+}
+func (m *Mongo) UpsertC(collName string, q map[string][]string, i interface{}) (string, error) {
+	return m.upsert(m.info.Database, collName, q, i)
+}
+
+func (m *Mongo) view(dbName, collName string, query, result interface{}) (string, error) {
+	return m.mdc(dbName, collName, func(coll *mgo.Collection) (string, error) {
 		err := coll.Find(query).All(&result)
 		if err != nil {
-			return err
+			return "", err
 		}
-		return err
+		return "", err
 	})
 }
 
-func (m *Mongo) ViewAllDC(dbName, collName string, query, result interface{}) error {
+func (m *Mongo) ViewAllDC(dbName, collName string, query, result interface{}) (string, error) {
 	return m.view(dbName, collName, query, result)
 }
-func (m *Mongo) ViewAllC(collName string, query, result interface{}) error {
+func (m *Mongo) ViewAllC(collName string, query, result interface{}) (string, error) {
 	return m.view(m.info.Database, collName, query, result)
 }
 
-func (m *Mongo) viewOne(dbName, collName string, query, result interface{}) error {
-	return m.mdc(dbName, collName, func(coll *mgo.Collection) error {
-		err := coll.Find(query).One(&result)
+func (m *Mongo) viewOne(dbName, collName string, query, result interface{}) (string, error) {
+	return m.mdc(dbName, collName, func(coll *mgo.Collection) (string, error) {
+		err := coll.Find(query).One(result)
 		if err != nil {
-			return err
+			return "", err
 		}
-		return err
+		return "", err
 	})
 }
 
-func (m *Mongo) ViewOneDC(dbName, collName string, query, result interface{}) error {
+func (m *Mongo) ViewOneDC(dbName, collName string, query, result interface{}) (string, error) {
 	return m.viewOne(dbName, collName, query, result)
 }
-func (m *Mongo) ViewOneC(collName string, query, result interface{}) error {
+func (m *Mongo) ViewOneC(collName string, query, result interface{}) (string, error) {
 	return m.viewOne(m.info.Database, collName, query, result)
 }
