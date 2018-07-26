@@ -185,3 +185,17 @@ func (m *Mongo) ViewOneDC(dbName, collName string, query, result interface{}) (s
 func (m *Mongo) ViewOneC(collName string, query, result interface{}) (string, error) {
 	return m.viewOne(m.info.Database, collName, query, result)
 }
+
+func (m *Mongo) In(field string, in bson.M) bson.M {
+	return bson.M{"$in": in}
+}
+
+type Query interface {
+	New(string, interface{})
+}
+
+type query bson.M
+
+func (q *query) New(field string, value interface{}) bson.M {
+	return bson.M{field: value}
+}
