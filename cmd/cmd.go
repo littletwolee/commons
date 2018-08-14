@@ -65,3 +65,18 @@ func (c *Cmd) ExecCommand(commandName, rootDir string, params []string, isOutput
 	cmd.Wait()
 	return fmt.Sprintf("%s", strout), fmt.Sprintf("%s", strerr), err
 }
+
+// @Title RunCommand
+// @Description exec command
+// @Parameters
+//                  commandName            *exec.Cmd        cmd point
+//                  rootdir                string           dir of exec
+//                  paras                  ...string         parparameters
+// @Returns output:*exec.Cmd err:error
+func (c *Cmd) Command(commandName, rootDir string, params ...string) *exec.Cmd {
+	cmd := exec.Command(commandName, params...)
+	cmd.Dir = rootDir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd
+}
