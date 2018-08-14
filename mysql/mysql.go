@@ -1,4 +1,4 @@
-package commons
+package mysql
 
 import (
 	"errors"
@@ -8,6 +8,8 @@ import (
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
+	"github.com/littletwolee/commons"
+	"github.com/littletwolee/commons/logger"
 )
 
 var (
@@ -63,24 +65,24 @@ func (m *mysqlHelper) MysqlInit() {
 		err               error
 		masterDB, slaveDB *gorm.DB
 	)
-	master := GetConfig().GetString("mysql.master")
-	slave := GetConfig().GetString("mysql.slave")
-	dataBase := GetConfig().GetString("mysql.database")
-	userName := GetConfig().GetString("mysql.username")
-	passWord := GetConfig().GetString("mysql.password")
-	isDebugStr := GetConfig().GetString("mysql.isdebug")
+	master := commons.GetConfig().GetString("mysql.master")
+	slave := commons.GetConfig().GetString("mysql.slave")
+	dataBase := commons.GetConfig().GetString("mysql.database")
+	userName := commons.GetConfig().GetString("mysql.username")
+	passWord := commons.GetConfig().GetString("mysql.password")
+	isDebugStr := commons.GetConfig().GetString("mysql.isdebug")
 	isDbug, err = strconv.ParseBool(isDebugStr)
 	if err != nil {
 		isDbug = true
 	}
 	masterDB, err = getDB(master, userName, passWord, dataBase)
 	if err != nil {
-		Console().Error(err.Error())
+		logger.Console().Error(err.Error())
 	}
 	m.MasterDB = masterDB
 	slaveDB, err = getDB(slave, userName, passWord, dataBase)
 	if err != nil {
-		Console().Error(err.Error())
+		logger.Console().Error(err.Error())
 	}
 	m.SlaveDb = slaveDB
 }

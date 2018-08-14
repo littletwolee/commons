@@ -1,4 +1,4 @@
-package commons
+package file
 
 import (
 	"errors"
@@ -12,6 +12,10 @@ import (
 var (
 	consFile     *File
 	fileCacheDir string
+)
+
+const (
+	ERROR_PATH_EMPTY = "Your path is empty?"
 )
 
 type File struct{}
@@ -36,7 +40,7 @@ func (f *File) PathExists(path string, iscreate bool) error {
 		err error
 	)
 	if path == "" {
-		err = errors.New(ERROR_Path_EMPTY)
+		err = errors.New(ERROR_PATH_EMPTY)
 		goto RETURN
 	}
 	_, err = os.Stat(path)
@@ -69,7 +73,7 @@ func (f *File) GetFilesInfo(path string) ([]os.FileInfo, error) {
 		dirList []os.FileInfo
 	)
 	if path == "" {
-		err = errors.New(ERROR_Path_EMPTY)
+		err = errors.New(ERROR_PATH_EMPTY)
 		goto RETURN
 	}
 	dirList, err = ioutil.ReadDir(path)
@@ -92,7 +96,7 @@ func (f *File) GetFileFullNameByPath(path string) (string, error) {
 		err   error
 	)
 	if path == "" {
-		err = errors.New(ERROR_Path_EMPTY)
+		err = errors.New(ERROR_PATH_EMPTY)
 		goto RETURN
 	}
 	if strings.Contains(path, "/") {
@@ -115,7 +119,7 @@ func (f *File) GetFileExtension(path string) (string, error) {
 		err   error
 	)
 	if path == "" {
-		err = errors.New(ERROR_Path_EMPTY)
+		err = errors.New(ERROR_PATH_EMPTY)
 		goto RETURN
 	}
 	if strings.Contains(path, "/") {
@@ -145,7 +149,7 @@ func (f *File) GetFileNameByPath(path string) (string, error) {
 		err   error
 	)
 	if path == "" {
-		err = errors.New(ERROR_Path_EMPTY)
+		err = errors.New(ERROR_PATH_EMPTY)
 		goto RETURN
 	}
 	if strings.Contains(path, "/") {
@@ -173,7 +177,7 @@ func (f *File) PathDel(path string) error {
 		err error
 	)
 	if path == "" {
-		err = errors.New(ERROR_Path_EMPTY)
+		err = errors.New(ERROR_PATH_EMPTY)
 		goto RETURN
 	}
 	err = os.RemoveAll(path)
@@ -194,7 +198,7 @@ func (f *File) OpenFile(path string, flags int) (*os.File, error) {
 		file *os.File
 	)
 	if path == "" {
-		err = errors.New(ERROR_Path_EMPTY)
+		err = errors.New(ERROR_PATH_EMPTY)
 		goto RETURN
 	}
 	file, err = os.OpenFile(path, flags, 0666)
@@ -214,7 +218,7 @@ func (f *File) FormatPath(path string) (string, error) {
 		currentPath string
 	)
 	if path == "" {
-		err = errors.New(ERROR_Path_EMPTY)
+		err = errors.New(ERROR_PATH_EMPTY)
 		goto RETURN
 	}
 	if path[len(path)-1:] != "/" {

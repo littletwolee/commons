@@ -1,4 +1,4 @@
-package commons
+package logger
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"sync"
 
+	"github.com/littletwolee/commons/file"
 	"github.com/sirupsen/logrus"
 )
 
@@ -24,6 +25,8 @@ const (
 	errLogger   string = "error"
 	infoLogger  string = "info"
 	panicLogger string = "panic"
+
+	ERROR_PARSE = "Failed parse log level"
 )
 
 type logger struct {
@@ -152,7 +155,7 @@ func (l *log) init() {
 }
 
 func (l *log) getFile(fileName string) *os.File {
-	consFile := GetFile()
+	consFile := file.GetFile()
 	logPath, err := consFile.FormatPath(l.logPath)
 	if err != nil {
 		logrus.Error(err)

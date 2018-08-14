@@ -1,17 +1,20 @@
-package commons
+package mongo
 
 import (
 	"reflect"
+	"sync"
 	"time"
 
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
+	"github.com/littletwolee/commons/logger"
 )
 
 var (
 	session     *mgo.Session
 	mongo       *Mongo
 	ErrNotFound = mgo.ErrNotFound
+	m           sync.Mutex
 )
 
 type Mongo struct {
@@ -44,7 +47,7 @@ func (m *Mongo) session() *mgo.Session {
 		var err error
 		session, err = mgo.DialWithInfo(m.info)
 		if err != nil {
-			Console().Panic(err)
+			logger.Console().Panic(err)
 		}
 	}
 	return session.Clone()
@@ -91,7 +94,7 @@ func (m *Mongo) mc(collection string, f func(*mgo.Collection) (string, error)) (
 	defer func() {
 		session.Close()
 		if err := recover(); err != nil {
-			Console().Panic(err)
+			logger.Console().Panic(err)
 		}
 	}()
 	c := session.DB(m.info.Database).C(collection)
@@ -103,7 +106,7 @@ func (m *Mongo) mdc(dbName string, collection string, f func(*mgo.Collection) (s
 	defer func() {
 		session.Close()
 		if err := recover(); err != nil {
-			Console().Panic(err)
+			logger.Console().Panic(err)
 		}
 	}()
 	c := session.DB(dbName).C(collection)
